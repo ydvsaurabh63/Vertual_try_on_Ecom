@@ -70,7 +70,7 @@ const Footer = () => {
 
         {/* Bottom copyright & payment icons */}
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-white/40">
-          <p>© 2026 STORE | Premium Fashion Platform. All rights reserved.</p>
+          <p>© 2026 STORE | Premium Fashion Platform. All rights reserved by saurabh singh yadav.</p>
           <div className="flex items-center space-x-3 text-xs">
             <span className="px-2 py-1 bg-white/5 rounded border border-white/10 text-white/70">VISA</span>
             <span className="px-2 py-1 bg-white/5 rounded border border-white/10 text-white/70">MASTERCARD</span>
