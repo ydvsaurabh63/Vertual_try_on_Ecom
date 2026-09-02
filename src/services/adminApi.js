@@ -1,8 +1,10 @@
+import { API_URL } from '../config/api';
+
 /**
  * Central API Client for Admin Panel & Virtual Try-On Management
  */
 
-const API_BASE = '/api';
+const API_BASE = API_URL;
 
 // Helper to get token
 const getAuthHeaders = () => {

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { PRODUCTS as FALLBACK_PRODUCTS, CATEGORIES as FALLBACK_CATEGORIES } from '../data/products';
+import { API_URL } from '../config/api';
 
 export const useProductStore = create((set, get) => ({
   products: FALLBACK_PRODUCTS,
@@ -11,7 +12,7 @@ export const useProductStore = create((set, get) => ({
     set({ isLoadingProducts: true });
     try {
       const query = new URLSearchParams(params).toString();
-      const res = await fetch(`/api/products${query ? `?${query}` : ''}`);
+      const res = await fetch(`${API_URL}/products${query ? `?${query}` : ''}`);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.products) && data.products.length > 0) {
@@ -29,7 +30,7 @@ export const useProductStore = create((set, get) => ({
   fetchCategories: async () => {
     set({ isLoadingCategories: true });
     try {
-      const res = await fetch('/api/categories');
+      const res = await fetch(`${API_URL}/categories`);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.categories) && data.categories.length > 0) {

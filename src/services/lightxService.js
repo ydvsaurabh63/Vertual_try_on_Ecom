@@ -1,3 +1,5 @@
+import { API_URL } from '../config/api';
+
 /**
  * LightX AI Virtual Try-On — Frontend Service
  *
@@ -52,7 +54,7 @@ export const getCachedTryOnResult = (personUrl, garmentId) => {
  * @returns {Promise<string>}     - The AI-generated try-on image URL
  */
 const callBackendTryOn = async (modelImageUrl, clothImageUrl) => {
-  const response = await fetch('/api/tryon', {
+  const response = await fetch(`${API_URL}/tryon`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ modelImageUrl, clothImageUrl }),
