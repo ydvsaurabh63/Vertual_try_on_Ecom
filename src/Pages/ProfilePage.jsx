@@ -20,15 +20,18 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      <Breadcrumbs items={[{ label: 'Account', path: '/account' }, { label: 'Edit Profile' }]} />
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 sm:space-y-8">
+      <Breadcrumbs items={[{ label: 'Account', path: '/account' }, { label: 'Profile Settings' }]} />
 
       <div>
-        <h1 className="text-3xl font-serif font-bold text-white">Personal Profile</h1>
-        <p className="text-xs text-white/50 mt-1">Manage your account details and contact preferences.</p>
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white flex items-center gap-3">
+          <User className="w-6 h-6 sm:w-7 sm:h-7 text-[#c87d4a]" />
+          <span>Personal Profile</span>
+        </h1>
+        <p className="text-xs text-white/50 mt-1 font-light">Update your account information and communications.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-8 rounded-3xl bg-[#121216] border border-white/10 space-y-6">
+      <form onSubmit={handleSubmit} className="p-5 sm:p-8 rounded-3xl bg-[#121216] border border-white/10 space-y-5 sm:space-y-6">
         <div>
           <label className="text-xs font-semibold text-white/60 uppercase block mb-1">Full Name</label>
           <input

@@ -18,26 +18,26 @@ const OrderSuccessPage = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-16 text-center space-y-8">
+    <div className="max-w-3xl mx-auto px-4 py-8 sm:py-16 text-center space-y-6 sm:space-y-8">
       
       {/* Success Badge */}
       <div className="flex flex-col items-center space-y-3">
-        <div className="w-20 h-20 rounded-full bg-[#c87d4a]/20 border border-[#c87d4a]/40 flex items-center justify-center text-[#c87d4a] animate-bounce">
-          <CheckCircle2 className="w-10 h-10" />
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#c87d4a]/20 border border-[#c87d4a]/40 flex items-center justify-center text-[#c87d4a] animate-bounce">
+          <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10" />
         </div>
-        <span className="text-xs font-mono uppercase tracking-widest text-[#c87d4a]">
+        <span className="text-[10px] sm:text-xs font-mono uppercase tracking-widest text-[#c87d4a]">
           THANK YOU FOR YOUR PURCHASE
         </span>
-        <h1 className="text-3xl sm:text-4xl font-serif font-bold text-white">
+        <h1 className="text-2xl sm:text-4xl font-serif font-bold text-white">
           Order Confirmed #{order.id}
         </h1>
-        <p className="text-sm text-white/60 max-w-md font-light">
+        <p className="text-xs sm:text-sm text-white/60 max-w-md font-light">
           We've received your order and sent a confirmation receipt to your email. Your items are being prepared for express dispatch.
         </p>
       </div>
 
       {/* Order Summary Card */}
-      <div className="p-6 rounded-3xl bg-[#121216] border border-white/10 text-left space-y-6">
+      <div className="p-4 sm:p-6 rounded-3xl bg-[#121216] border border-white/10 text-left space-y-5 sm:space-y-6">
         
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-6 border-b border-white/10 text-xs">
           <div>

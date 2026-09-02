@@ -1,10 +1,11 @@
 import React from 'react';
 import { Check, RotateCcw, Star } from 'lucide-react';
 import { useFilterStore } from '../store/useFilterStore';
-import { CATEGORIES } from '../data/products';
+import { useProductStore } from '../store/useProductStore';
 
-const FilterSidebar = () => {
+const FilterSidebar = ({ isDrawer = false, className = '' }) => {
   const { filters, setCategory, setGender, setPriceRange, toggleSize, toggleColor, setInStockOnly, setOnSaleOnly, resetFilters } = useFilterStore();
+  const { categories } = useProductStore();
 
   const sizes = ['XS', 'S', 'M', 'L', 'XL', '30', '32', '34', '36', '40', '41', '42', '43'];
   const colors = [
@@ -18,7 +19,11 @@ const FilterSidebar = () => {
   ];
 
   return (
-    <aside className="w-64 flex-shrink-0 space-y-8 p-6 rounded-3xl bg-[#121216] border border-white/10 text-white">
+    <aside className={`${
+      isDrawer 
+        ? 'w-full space-y-6 text-white' 
+        : 'w-64 flex-shrink-0 space-y-8 p-6 rounded-3xl bg-[#121216] border border-white/10 text-white'
+    } ${className}`}>
       
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/10 pb-4">
@@ -34,7 +39,7 @@ const FilterSidebar = () => {
 
       {/* Category List with Thumbnails matching exact reference screenshot (media_1787765609596.png) */}
       <div className="space-y-1.5">
-        {CATEGORIES.map((cat) => {
+        {categories.map((cat) => {
           const isSelected = filters.category === cat.slug;
           return (
             <button

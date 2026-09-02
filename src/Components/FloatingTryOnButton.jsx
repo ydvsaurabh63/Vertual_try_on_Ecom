@@ -5,12 +5,10 @@ import { useTryOnStore } from '../store/useTryOnStore';
 const FloatingTryOnButton = () => {
   const { isOpen, openTryOn, closeTryOn } = useTryOnStore();
 
+  if (isOpen) return null;
+
   const handleToggle = () => {
-    if (isOpen) {
-      closeTryOn();
-    } else {
-      openTryOn(null);
-    }
+    openTryOn(null);
   };
 
   return (

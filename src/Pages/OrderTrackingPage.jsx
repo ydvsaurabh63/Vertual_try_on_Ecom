@@ -37,18 +37,18 @@ const OrderTrackingPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
         <div>
           <span className="text-xs font-mono uppercase text-[#c87d4a] tracking-widest">LIVE PACKAGE TRACKING</span>
-          <h1 className="text-3xl font-serif font-bold text-white mt-1">Order #{order.id}</h1>
-          <p className="text-xs text-white/50 font-light mt-0.5">Tracking Number: <strong className="text-white font-mono">{order.trackingNumber}</strong></p>
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white mt-1">Order #{order.id}</h1>
+          <p className="text-xs text-white/50 font-light mt-0.5">Tracking Number: <strong className="text-white font-mono break-all">{order.trackingNumber}</strong></p>
         </div>
 
-        <div className="px-4 py-2 rounded-2xl bg-[#c87d4a]/20 border border-[#c87d4a]/40 text-[#c87d4a] text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+        <div className="px-4 py-2 rounded-2xl bg-[#c87d4a]/20 border border-[#c87d4a]/40 text-[#c87d4a] text-xs font-bold uppercase tracking-wider flex items-center gap-2 self-start sm:self-auto">
           <Truck className="w-4 h-4" />
           <span>Status: {order.status}</span>
         </div>
       </div>
 
       {/* Timeline Steps Component */}
-      <div className="p-8 rounded-3xl bg-[#121216] border border-white/10 space-y-8">
+      <div className="p-4 sm:p-8 rounded-3xl bg-[#121216] border border-white/10 space-y-6 sm:space-y-8">
         <h3 className="text-sm font-bold text-white uppercase tracking-wider">Shipment Milestone Progress</h3>
 
         <div className="relative border-l-2 border-white/10 ml-4 space-y-8">

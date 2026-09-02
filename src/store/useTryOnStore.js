@@ -2,15 +2,15 @@ import { create } from 'zustand';
 import { PRODUCTS, TRY_ON_MODELS } from '../data/products';
 
 export const useTryOnStore = create((set) => ({
-  isOpen: true,
-  selectedProduct: PRODUCTS[0] || null,
+  isOpen: false,
+  selectedProduct: null,
   selectedModel: TRY_ON_MODELS[0],
   selectedSize: 'M',
   selectedColor: null,
 
   openTryOn: (product = null) => set((state) => ({
     isOpen: true,
-    selectedProduct: product || state.selectedProduct || PRODUCTS[0],
+    selectedProduct: product || state.selectedProduct || null,
     selectedColor: product?.colors?.[0] || state.selectedColor || null,
     selectedSize: product?.sizes?.[0] || state.selectedSize || 'M',
   })),

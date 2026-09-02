@@ -28,8 +28,8 @@ const MobileFilterDrawer = () => {
             </button>
           </div>
 
-          <div className="flex-1">
-            <FilterSidebar />
+          <div className="flex-1 pr-1">
+            <FilterSidebar isDrawer={true} />
           </div>
 
           <div className="pt-4 mt-4 border-t border-white/10">

@@ -12,10 +12,10 @@ const WishlistPage = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       <Breadcrumbs items={[{ label: 'Saved Wishlist' }]} />
 
-      <div className="flex items-center justify-between border-b border-white/10 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-white flex items-center gap-3">
-            <Heart className="w-7 h-7 text-[#c87d4a] fill-current" />
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white flex items-center gap-3">
+            <Heart className="w-6 h-6 sm:w-7 sm:h-7 text-[#c87d4a] fill-current" />
             <span>My Saved Wishlist</span>
           </h1>
           <p className="text-xs text-white/50 mt-1 font-light">
@@ -26,7 +26,7 @@ const WishlistPage = () => {
         {items.length > 0 && (
           <button
             onClick={clearWishlist}
-            className="text-xs text-white/50 hover:text-rose-400 underline transition-colors"
+            className="text-xs text-white/50 hover:text-rose-400 underline transition-colors self-start sm:self-auto"
           >
             Clear Wishlist
           </button>
@@ -51,7 +51,7 @@ const WishlistPage = () => {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
           {items.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}

@@ -19,33 +19,33 @@ const HeroSection = () => {
       </div>
 
       {/* Content Container */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
-        <div className="max-w-2xl space-y-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 w-full">
+        <div className="max-w-2xl space-y-4 sm:space-y-6">
           
           {/* Subtitle Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5 text-[#c87d4a]" />
-            <span className="text-xs font-semibold tracking-[0.3em] text-white/80 uppercase">
+            <span className="text-[10px] sm:text-xs font-semibold tracking-[0.25em] sm:tracking-[0.3em] text-white/80 uppercase">
               NEW COLLECTION 2026
             </span>
           </div>
 
           {/* Main Title matching reference website exact styling */}
-          <h1 className="text-5xl sm:text-7xl lg:text-8xl font-sans font-extrabold tracking-tight text-white leading-[1.05]">
+          <h1 className="text-4xl xs:text-5xl sm:text-7xl lg:text-8xl font-sans font-extrabold tracking-tight text-white leading-[1.05]">
             Elevate <br />
             <span className="font-light italic text-white/90">Your Style</span>
           </h1>
 
           {/* Supporting Subtext */}
-          <p className="text-base sm:text-lg text-white/70 max-w-lg font-light leading-relaxed">
+          <p className="text-sm sm:text-lg text-white/70 max-w-lg font-light leading-relaxed">
             Timeless pieces, hand-picked for the modern gentleman & contemporary wardrobe. Premium labels, distinctive style.
           </p>
 
           {/* Primary CTA Buttons */}
-          <div className="flex flex-wrap items-center gap-4 pt-4">
+          <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-3 sm:gap-4 pt-2 sm:pt-4">
             <Link
               to="/shop"
-              className="inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[#c87d4a] hover:bg-[#d28a57] text-white font-medium text-sm tracking-wide shadow-lg shadow-[#c87d4a]/25 transition-all transform hover:-translate-y-0.5"
+              className="inline-flex items-center justify-center gap-3 px-6 sm:px-8 py-3.5 sm:py-4 rounded-full bg-[#c87d4a] hover:bg-[#d28a57] text-white font-medium text-xs sm:text-sm tracking-wide shadow-lg shadow-[#c87d4a]/25 transition-all transform hover:-translate-y-0.5"
             >
               <span>Shop Now</span>
               <ArrowRight className="w-4 h-4" />
@@ -53,7 +53,7 @@ const HeroSection = () => {
 
             <Link
               to="/new-arrivals"
-              className="inline-flex items-center px-8 py-4 rounded-full bg-white/5 hover:bg-white/15 border border-white/20 text-white font-medium text-sm tracking-wide backdrop-blur-md transition-all"
+              className="inline-flex items-center justify-center px-6 sm:px-8 py-3.5 sm:py-4 rounded-full bg-white/5 hover:bg-white/15 border border-white/20 text-white font-medium text-xs sm:text-sm tracking-wide backdrop-blur-md transition-all"
             >
               New Arrivals
             </Link>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Breadcrumbs from '../Components/Breadcrumbs';
 import ProductGrid from '../Components/ProductGrid';
-import { PRODUCTS } from '../data/products';
+import { useProductStore } from '../store/useProductStore';
 import { useCartStore } from '../store/useCartStore';
 import { useWishlistStore } from '../store/useWishlistStore';
 import { useTryOnStore } from '../store/useTryOnStore';
@@ -29,8 +29,9 @@ const ProductDetailPage = () => {
   const addItem = useCartStore((state) => state.addItem);
   const { toggleWishlist, isInWishlist } = useWishlistStore();
   const openTryOn = useTryOnStore((state) => state.openTryOn);
+  const { products } = useProductStore();
 
-  const product = PRODUCTS.find((p) => p.slug === slug) || PRODUCTS[0];
+  const product = products.find((p) => p.slug === slug || p.id === slug) || products[0];
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0] || null);
@@ -70,7 +71,7 @@ const ProductDetailPage = () => {
     else toast('Removed from Wishlist', { icon: '💔' });
   };
 
-  const relatedProducts = PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
+  const relatedProducts = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
@@ -79,21 +80,21 @@ const ProductDetailPage = () => {
       <Breadcrumbs items={[{ label: 'Shop', path: '/shop' }, { label: product.category, path: `/shop?category=${product.category}` }, { label: product.name }]} />
 
       {/* Main Product Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
         
         {/* LEFT: Product Gallery */}
         <div className="space-y-4">
-          <div className="relative aspect-[3/4] w-full rounded-3xl overflow-hidden bg-[#121216] border border-white/10 shadow-2xl">
+          <div className="relative aspect-[3/4] w-full rounded-2xl sm:rounded-3xl overflow-hidden bg-[#121216] border border-white/10 shadow-2xl">
             
             {/* Badges */}
-            <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+            <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10 flex flex-col gap-1.5 sm:gap-2">
               {product.isSale && (
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#c87d4a] text-white uppercase shadow-lg">
+                <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold bg-[#c87d4a] text-white uppercase shadow-lg">
                   -{product.discount}% OFF
                 </span>
               )}
               {product.isNew && (
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-white text-black uppercase shadow-lg">
+                <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold bg-white text-black uppercase shadow-lg">
                   NEW SEASON
                 </span>
               )}
@@ -102,18 +103,18 @@ const ProductDetailPage = () => {
             <img
               src={product.images[activeImageIndex] || product.images[0]}
               alt={product.name}
-              className="w-full h-full object-cover transition-all duration-500"
+              className="w-full h-full object-contain p-6 sm:p-8 transition-all duration-500"
             />
           </div>
 
           {/* Thumbnails list */}
           {product.images?.length > 1 && (
-            <div className="flex items-center gap-3 overflow-x-auto pb-2">
+            <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-none">
               {product.images.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActiveImageIndex(idx)}
-                  className={`w-20 h-24 rounded-2xl overflow-hidden border-2 transition-all ${
+                  className={`w-16 h-20 sm:w-20 sm:h-24 rounded-xl sm:rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 ${
                     activeImageIndex === idx 
                       ? 'border-[#c87d4a] scale-105 shadow-xl' 
                       : 'border-white/10 opacity-60 hover:opacity-100'
@@ -127,67 +128,67 @@ const ProductDetailPage = () => {
         </div>
 
         {/* RIGHT: Product Specs & CTAs */}
-        <div className="space-y-6">
+        <div className="space-y-5 sm:space-y-6">
           
           {/* Header */}
           <div>
             <span className="text-xs font-mono uppercase tracking-widest text-[#c87d4a]">
               {product.category} • {product.gender}
             </span>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-white tracking-tight mt-1">
+            <h1 className="text-2xl sm:text-4xl font-serif font-bold text-white tracking-tight mt-1">
               {product.name}
             </h1>
             
-            <div className="flex items-center gap-4 mt-3">
-              <div className="flex items-center gap-1 text-amber-400 font-semibold text-sm">
-                <Star className="w-4 h-4 fill-current" />
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 sm:mt-3">
+              <div className="flex items-center gap-1 text-amber-400 font-semibold text-xs sm:text-sm">
+                <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" />
                 <span>{product.rating}</span>
-                <span className="text-white/40">({product.reviewsCount} verified reviews)</span>
+                <span className="text-white/40">({product.reviewsCount} reviews)</span>
               </div>
-              <span className="text-white/20">•</span>
-              <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold">
-                <Check className="w-4 h-4" />
+              <span className="text-white/20 hidden sm:inline">•</span>
+              <div className="flex items-center gap-1 text-[11px] sm:text-xs text-emerald-400 font-semibold">
+                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>In Stock ({product.stock} available)</span>
               </div>
             </div>
           </div>
 
           {/* Pricing */}
-          <div className="p-4 rounded-2xl bg-[#121216] border border-white/10 flex items-center justify-between">
-            <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-extrabold text-[#c87d4a]">${product.price}</span>
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#121216] border border-white/10 flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-baseline gap-2 sm:gap-3">
+              <span className="text-2xl sm:text-3xl font-extrabold text-[#c87d4a]">${product.price}</span>
               {product.originalPrice && (
-                <span className="text-lg text-white/40 line-through">${product.originalPrice}</span>
+                <span className="text-base sm:text-lg text-white/40 line-through">${product.originalPrice}</span>
               )}
             </div>
             {product.isSale && (
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#c87d4a]/20 text-[#c87d4a] border border-[#c87d4a]/40">
-                You save ${product.originalPrice - product.price} ({product.discount}%)
+              <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold bg-[#c87d4a]/20 text-[#c87d4a] border border-[#c87d4a]/40">
+                Save ${product.originalPrice - product.price} ({product.discount}%)
               </span>
             )}
           </div>
 
           {/* Color Swatches */}
           {product.colors && (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               <label className="text-xs font-semibold text-white/60 uppercase tracking-wider block">
                 Color: <span className="text-white font-bold">{selectedColor?.name || product.colors[0]?.name}</span>
               </label>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 sm:gap-3">
                 {product.colors.map((c, i) => {
                   const isSel = (selectedColor?.name || product.colors[0]?.name) === c.name;
                   return (
                     <button
                       key={i}
                       onClick={() => setSelectedColor(c)}
-                      className={`w-9 h-9 rounded-full border-2 transition-all flex items-center justify-center ${
+                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 transition-all flex items-center justify-center ${
                         isSel ? 'border-[#c87d4a] scale-110 shadow-lg ring-2 ring-[#c87d4a]/50' : 'border-white/20'
                       }`}
                       style={{ backgroundColor: c.hex }}
                       title={c.name}
                     >
                       {isSel && (
-                        <Check className={`w-4 h-4 ${c.hex === '#ffffff' ? 'text-black' : 'text-white'}`} />
+                        <Check className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${c.hex === '#ffffff' ? 'text-black' : 'text-white'}`} />
                       )}
                     </button>
                   );
@@ -198,7 +199,7 @@ const ProductDetailPage = () => {
 
           {/* Size Selector with Validation */}
           {product.sizes && (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold text-white/60 uppercase tracking-wider">
                   Select Size <span className="text-rose-400">*</span>
@@ -212,7 +213,7 @@ const ProductDetailPage = () => {
                 </button>
               </div>
 
-              <div className="flex flex-wrap gap-2.5">
+              <div className="flex flex-wrap gap-2">
                 {product.sizes.map((s) => (
                   <button
                     key={s}
@@ -220,7 +221,7 @@ const ProductDetailPage = () => {
                       setSelectedSize(s);
                       setSizeError(false);
                     }}
-                    className={`px-5 py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                    className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs font-bold border transition-all ${
                       selectedSize === s
                         ? 'bg-[#c87d4a] border-[#c87d4a] text-white shadow-lg'
                         : 'bg-[#121216] border-white/10 text-white/80 hover:bg-white/10'
@@ -240,31 +241,33 @@ const ProductDetailPage = () => {
           )}
 
           {/* Quantity Selector */}
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             <label className="text-xs font-semibold text-white/60 uppercase tracking-wider block">Quantity</label>
             <div className="inline-flex items-center border border-white/10 rounded-xl bg-[#121216]">
               <button
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="p-3 text-white/60 hover:text-white"
+                className="p-2.5 sm:p-3 text-white/60 hover:text-white"
+                aria-label="Decrease quantity"
               >
-                <Minus className="w-4 h-4" />
+                <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
-              <span className="px-6 text-sm font-bold text-white">{quantity}</span>
+              <span className="px-5 sm:px-6 text-xs sm:text-sm font-bold text-white">{quantity}</span>
               <button
                 onClick={() => setQuantity(quantity + 1)}
-                className="p-3 text-white/60 hover:text-white"
+                className="p-2.5 sm:p-3 text-white/60 hover:text-white"
+                aria-label="Increase quantity"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
             </div>
           </div>
 
           {/* Primary CTAs */}
-          <div className="space-y-3 pt-4 border-t border-white/10">
-            <div className="flex items-center gap-3">
+          <div className="space-y-3 pt-3 sm:pt-4 border-t border-white/10">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={handleAddToCart}
-                className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-[#c87d4a] hover:bg-[#d28a57] text-white text-sm font-semibold tracking-wide shadow-xl shadow-[#c87d4a]/25 transition-all transform hover:-translate-y-0.5"
+                className="flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-4 rounded-2xl bg-[#c87d4a] hover:bg-[#d28a57] text-white text-xs sm:text-sm font-semibold tracking-wide shadow-xl shadow-[#c87d4a]/25 transition-all transform hover:-translate-y-0.5"
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span>Add to Shopping Bag</span>
@@ -272,8 +275,9 @@ const ProductDetailPage = () => {
 
               <button
                 onClick={() => openTryOn(product)}
-                className="flex items-center justify-center gap-2 px-5 py-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold border border-white/10 transition-colors"
-                title="Try on avatar model"
+                className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-3.5 sm:py-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold border border-white/10 transition-colors flex-shrink-0"
+                title="Try on mannequin model"
+                aria-label="Try on mannequin"
               >
                 <Shirt className="w-4 h-4 text-[#c87d4a]" />
                 <span className="hidden sm:inline">Try On</span>
@@ -281,12 +285,13 @@ const ProductDetailPage = () => {
 
               <button
                 onClick={handleWishlist}
-                className={`p-4 rounded-2xl border transition-colors ${
+                className={`p-3.5 sm:p-4 rounded-2xl border transition-colors flex-shrink-0 ${
                   isWishlisted 
                     ? 'bg-rose-500/20 border-rose-500 text-rose-400' 
                     : 'bg-[#121216] border-white/10 text-white hover:bg-white/10'
                 }`}
                 title="Wishlist"
+                aria-label="Toggle wishlist"
               >
                 <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current' : ''}`} />
               </button>
@@ -294,20 +299,20 @@ const ProductDetailPage = () => {
 
             <button
               onClick={handleBuyNow}
-              className="w-full py-4 rounded-2xl bg-white text-black hover:bg-white/90 font-bold text-sm uppercase tracking-wider shadow-lg transition-all"
+              className="w-full py-3.5 sm:py-4 rounded-2xl bg-white text-black hover:bg-white/90 font-bold text-xs sm:text-sm uppercase tracking-wider shadow-lg transition-all"
             >
               Buy It Now
             </button>
           </div>
 
           {/* Value Perks */}
-          <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-[#121216] border border-white/5 text-xs text-white/70">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 sm:p-4 rounded-2xl bg-[#121216] border border-white/5 text-xs text-white/70">
             <div className="flex items-center gap-2">
-              <Truck className="w-4 h-4 text-[#c87d4a]" />
+              <Truck className="w-4 h-4 text-[#c87d4a] flex-shrink-0" />
               <span>Complimentary Express Shipping</span>
             </div>
             <div className="flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 text-[#c87d4a]" />
+              <RefreshCw className="w-4 h-4 text-[#c87d4a] flex-shrink-0" />
               <span>30-Day Easy Returns</span>
             </div>
           </div>

@@ -1,8 +1,8 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from '../Layout/Layout';
 
-// Page Imports
+// Public Page Imports
 import HomePage from '../Pages/HomePage';
 import ShopPage from '../Pages/ShopPage';
 import CategoryPage from '../Pages/CategoryPage';
@@ -28,11 +28,68 @@ import ReturnsPage from '../Pages/ReturnsPage';
 import PrivacyPage from '../Pages/PrivacyPage';
 import TermsPage from '../Pages/TermsPage';
 
+// Admin Imports
+import AdminProtectedRoute from './AdminProtectedRoute';
+import AdminLayout from '../Components/Admin/AdminLayout';
+import AdminLogin from '../Pages/Admin/AdminLogin';
+import AdminDashboard from '../Pages/Admin/AdminDashboard';
+import AdminProducts from '../Pages/Admin/AdminProducts';
+import AdminAddEditProduct from '../Pages/Admin/AdminAddEditProduct';
+import AdminCategories from '../Pages/Admin/AdminCategories';
+import AdminOrders from '../Pages/Admin/AdminOrders';
+import AdminOrderDetails from '../Pages/Admin/AdminOrderDetails';
+import AdminUsers from '../Pages/Admin/AdminUsers';
+import AdminUserDetails from '../Pages/Admin/AdminUserDetails';
+import AdminVirtualTryOn from '../Pages/Admin/AdminVirtualTryOn';
+import AdminApiUsage from '../Pages/Admin/AdminApiUsage';
+import AdminSettings from '../Pages/Admin/AdminSettings';
+import AdminProfile from '../Pages/Admin/AdminProfile';
+
 const MainRoute = () => {
   return (
     <Routes>
+      {/* ── Admin Login Route ──────────────────────────────────────────────── */}
+      <Route path="/admin/login" element={<AdminLogin />} />
+
+      {/* ── Protected Admin Routes ────────────────────────────────────────── */}
+      <Route
+        path="/admin"
+        element={
+          <AdminProtectedRoute>
+            <AdminLayout />
+          </AdminProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        
+        {/* Products */}
+        <Route path="products" element={<AdminProducts />} />
+        <Route path="products/new" element={<AdminAddEditProduct />} />
+        <Route path="products/edit/:id" element={<AdminAddEditProduct />} />
+
+        {/* Categories */}
+        <Route path="categories" element={<AdminCategories />} />
+
+        {/* Orders */}
+        <Route path="orders" element={<AdminOrders />} />
+        <Route path="orders/:id" element={<AdminOrderDetails />} />
+
+        {/* Users */}
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="users/:id" element={<AdminUserDetails />} />
+
+        {/* Virtual Try-On & Monitoring */}
+        <Route path="try-on" element={<AdminVirtualTryOn />} />
+        <Route path="api-usage" element={<AdminApiUsage />} />
+
+        {/* Settings & Profile */}
+        <Route path="settings" element={<AdminSettings />} />
+        <Route path="profile" element={<AdminProfile />} />
+      </Route>
+
+      {/* ── Main Customer Store Routes ────────────────────────────────────── */}
       <Route path="/" element={<Layout />}>
-        {/* Main Store Routes */}
         <Route index element={<HomePage />} />
         <Route path="shop" element={<ShopPage />} />
         <Route path="shop/:category" element={<CategoryPage />} />

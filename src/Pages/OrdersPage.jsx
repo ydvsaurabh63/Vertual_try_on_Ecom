@@ -12,8 +12,8 @@ const OrdersPage = () => {
       <Breadcrumbs items={[{ label: 'Account', path: '/account' }, { label: 'Order History' }]} />
 
       <div>
-        <h1 className="text-3xl font-serif font-bold text-white flex items-center gap-3">
-          <Package className="w-7 h-7 text-[#c87d4a]" />
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white flex items-center gap-3">
+          <Package className="w-6 h-6 sm:w-7 sm:h-7 text-[#c87d4a]" />
           <span>My Order History</span>
         </h1>
         <p className="text-xs text-white/50 mt-1 font-light">
@@ -31,9 +31,9 @@ const OrdersPage = () => {
           </Link>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {orders.map((order) => (
-            <div key={order.id} className="p-6 rounded-3xl bg-[#121216] border border-white/10 space-y-4">
+            <div key={order.id} className="p-4 sm:p-6 rounded-3xl bg-[#121216] border border-white/10 space-y-4">
               
               {/* Order Header */}
               <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-white/10">

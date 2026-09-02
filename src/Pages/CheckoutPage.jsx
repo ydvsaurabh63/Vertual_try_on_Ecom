@@ -65,7 +65,10 @@ const CheckoutPage = () => {
       date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
       status: 'Confirmed',
       total: grandTotal,
+      subtotal: subtotal,
+      shipping: shippingFee,
       items: items.map(item => ({
+        id: item.id,
         name: item.name,
         quantity: item.quantity,
         price: item.price,
@@ -73,11 +76,28 @@ const CheckoutPage = () => {
         color: item.selectedColor,
         size: item.selectedSize
       })),
+      customer: {
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        phone: formData.phone,
+        address: `${formData.address}, ${formData.apartment ? formData.apartment + ', ' : ''}${formData.city}, ${formData.state} ${formData.zip}`
+      },
       shippingAddress: `${formData.address}, ${formData.apartment ? formData.apartment + ', ' : ''}${formData.city}, ${formData.state} ${formData.zip}`,
       paymentMethod: formData.paymentMethod.toUpperCase(),
       trackingNumber: 'TRK-' + Math.floor(10000000 + Math.random() * 90000000),
       estimatedDelivery: '3-5 Business Days',
     };
+
+    // Save to Backend DB dynamically
+    try {
+      fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newOrder)
+      }).catch(err => console.warn('Order sync note:', err));
+    } catch (e) {
+      console.warn('Backend order sync note:', e);
+    }
 
     addOrder(newOrder);
     clearCart();
@@ -204,49 +224,49 @@ const CheckoutPage = () => {
           </div>
 
           {/* 3. Payment Method */}
-          <div className="p-6 rounded-3xl bg-[#121216] border border-white/10 space-y-4">
+          <div className="p-4 sm:p-6 rounded-3xl bg-[#121216] border border-white/10 space-y-4">
             <h3 className="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-[#c87d4a] text-white text-xs flex items-center justify-center font-bold">3</span>
               <span>Payment Option</span>
             </h3>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 xs:grid-cols-3 gap-2.5 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, paymentMethod: 'card' })}
-                className={`p-4 rounded-2xl border text-center flex flex-col items-center gap-2 transition-all ${
+                className={`p-3 sm:p-4 rounded-2xl border text-center flex flex-row xs:flex-col items-center justify-center gap-2 transition-all ${
                   formData.paymentMethod === 'card'
                     ? 'bg-[#c87d4a]/20 border-[#c87d4a] text-white font-bold'
                     : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
                 }`}
               >
-                <CreditCard className="w-5 h-5 text-[#c87d4a]" />
+                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-[#c87d4a]" />
                 <span className="text-xs">Credit Card</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, paymentMethod: 'upi' })}
-                className={`p-4 rounded-2xl border text-center flex flex-col items-center gap-2 transition-all ${
+                className={`p-3 sm:p-4 rounded-2xl border text-center flex flex-row xs:flex-col items-center justify-center gap-2 transition-all ${
                   formData.paymentMethod === 'upi'
                     ? 'bg-[#c87d4a]/20 border-[#c87d4a] text-white font-bold'
                     : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
                 }`}
               >
-                <Smartphone className="w-5 h-5 text-[#c87d4a]" />
+                <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 text-[#c87d4a]" />
                 <span className="text-xs">UPI / Wallet</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setFormData({ ...formData, paymentMethod: 'cod' })}
-                className={`p-4 rounded-2xl border text-center flex flex-col items-center gap-2 transition-all ${
+                className={`p-3 sm:p-4 rounded-2xl border text-center flex flex-row xs:flex-col items-center justify-center gap-2 transition-all ${
                   formData.paymentMethod === 'cod'
                     ? 'bg-[#c87d4a]/20 border-[#c87d4a] text-white font-bold'
                     : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'
                 }`}
               >
-                <Banknote className="w-5 h-5 text-[#c87d4a]" />
+                <Banknote className="w-4 h-4 sm:w-5 sm:h-5 text-[#c87d4a]" />
                 <span className="text-xs">Cash on Delivery</span>
               </button>
             </div>

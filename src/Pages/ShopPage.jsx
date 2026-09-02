@@ -5,7 +5,7 @@ import FilterSidebar from '../Components/FilterSidebar';
 import MobileFilterDrawer from '../Components/MobileFilterDrawer';
 import ProductGrid from '../Components/ProductGrid';
 import { useFilterStore } from '../store/useFilterStore';
-import { PRODUCTS } from '../data/products';
+import { useProductStore } from '../store/useProductStore';
 import { SlidersHorizontal, ChevronDown, X, RotateCcw } from 'lucide-react';
 
 const ShopPage = () => {
@@ -14,6 +14,7 @@ const ShopPage = () => {
   const saleParam = searchParams.get('onSaleOnly');
 
   const { filters, setSortBy, openMobileFilter, resetFilters, setCategory, setOnSaleOnly } = useFilterStore();
+  const { products } = useProductStore();
 
   // Sync URL search params on load if provided
   React.useEffect(() => {
@@ -23,7 +24,7 @@ const ShopPage = () => {
 
   // Filter & Sort Logic
   const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter((product) => {
+    return products.filter((product) => {
       // Category filter
       if (filters.category !== 'all' && product.category !== filters.category && product.slug !== filters.category) {
         return false;
@@ -81,7 +82,7 @@ const ShopPage = () => {
         <Breadcrumbs items={[{ label: 'Shop Catalog' }]} />
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mt-2">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-serif font-bold text-white tracking-tight">
               Luxury Fashion Shop
             </h1>
             <p className="text-xs text-white/50 mt-1 font-light">
@@ -90,12 +91,12 @@ const ShopPage = () => {
           </div>
 
           {/* Controls: Mobile Filter Button & Sort Dropdown */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <button
               onClick={openMobileFilter}
-              className="lg:hidden flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#121216] border border-white/10 text-xs font-semibold text-white"
+              className="lg:hidden flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-[#121216] border border-white/10 text-xs font-semibold text-white"
             >
-              <SlidersHorizontal className="w-4 h-4 text-[#c87d4a]" />
+              <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#c87d4a]" />
               <span>Filters ({activeChips.length})</span>
             </button>
 
@@ -104,7 +105,7 @@ const ShopPage = () => {
               <select
                 value={filters.sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-[#121216] border border-white/10 rounded-xl px-4 py-2.5 pr-8 text-xs font-semibold text-white focus:outline-none focus:border-[#c87d4a] cursor-pointer"
+                className="appearance-none bg-[#121216] border border-white/10 rounded-xl px-3 sm:px-4 py-2.5 pr-7 sm:pr-8 text-xs font-semibold text-white focus:outline-none focus:border-[#c87d4a] cursor-pointer"
               >
                 <option value="featured">Sort by: Featured</option>
                 <option value="price-asc">Price: Low to High</option>
@@ -112,7 +113,7 @@ const ShopPage = () => {
                 <option value="rating">Highest Rated</option>
                 <option value="newest">New Arrivals</option>
               </select>
-              <ChevronDown className="w-4 h-4 text-white/50 absolute right-3 pointer-events-none" />
+              <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/50 absolute right-2.5 sm:right-3 pointer-events-none" />
             </div>
           </div>
 

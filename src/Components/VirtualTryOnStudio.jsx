@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Shirt, Sparkles, Key, RotateCcw, ZoomIn, ShoppingBag, Cpu } from 'lucide-react';
+import { X, Sparkles, RotateCcw, ZoomIn, ShoppingBag, Cpu, Wand2, Check, Server, Upload, Camera, User, Image as ImageIcon } from 'lucide-react';
 import { useTryOnStore } from '../store/useTryOnStore';
 import { useCartStore } from '../store/useCartStore';
 import { generateAiTryOnFitAnalysis } from '../services/geminiService';
-import gsap from 'gsap';
+import { runLightXVirtualTryOn, getCachedTryOnResult } from '../services/lightxService';
+import { TRY_ON_MODELS } from '../data/products';
+import CameraCaptureModal from './CameraCaptureModal';
+import ModelSelectionModal from './ModelSelectionModal';
 import toast from 'react-hot-toast';
 
 const VirtualTryOnStudio = () => {
@@ -11,18 +14,22 @@ const VirtualTryOnStudio = () => {
     isOpen, 
     closeTryOn, 
     selectedProduct, 
-    setProduct,
+    setProduct, 
   } = useTryOnStore();
 
   const addItem = useCartStore((state) => state.addItem);
 
   const [pickedItems, setPickedItems] = useState([]);
-  const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || '');
-  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [tempKeyInput, setTempKeyInput] = useState('');
-  
-  // AI Processing & Scanning States
-  const [isAiProcessing, setIsAiProcessing] = useState(false);
+
+  // Try-On Engine & Model States
+  const [selectedModelId, setSelectedModelId] = useState('m-arjun');
+  const [isLightXGenerating, setIsLightXGenerating] = useState(false);
+  const [lightXProgress, setLightXProgress] = useState(0);
+  const [aiGeneratedImage, setAiGeneratedImage] = useState(null);
+  const [customUserPhoto, setCustomUserPhoto] = useState(null);
+  const [fitInsights, setFitInsights] = useState(null);
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [isModelModalOpen, setIsModelModalOpen] = useState(false);
 
   // Interactive Focal Point Mouse Zoom States
   const [isHovered, setIsHovered] = useState(false);
@@ -30,182 +37,217 @@ const VirtualTryOnStudio = () => {
   const [transformOrigin, setTransformOrigin] = useState('50% 50%');
 
   const containerRef = useRef(null);
-  const garmentRef = useRef(null);
-  const scannerRef = useRef(null);
+  const fileInputRef = useRef(null);
 
-  // Exact 3D Grey Standing Mannequin Image provided by user
-  const BASE_MANNEQUIN_IMAGE = "/assets/images/tryon/model-man.jpg";
+  // Active Person / Model Image
+  const activeModel = (TRY_ON_MODELS && TRY_ON_MODELS.find((m) => m.id === selectedModelId)) || (TRY_ON_MODELS && TRY_ON_MODELS[0]) || {
+    id: 'm-arjun',
+    name: 'Arjun Sharma',
+    fullBody: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80',
+    avatar: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=400&q=80',
+  };
+  const activePersonImage = customUserPhoto || activeModel?.fullBody || 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80';
 
   useEffect(() => {
-    const savedKey = localStorage.getItem('gemini_api_key');
-    if (savedKey) setGeminiApiKey(savedKey);
+    // Clear stale try-on cache on mount so old results don't linger
+    localStorage.removeItem('lightx_tryon_cache');
   }, []);
 
-  // Anatomical Body Fitting Positioning according to clothing category
-  const getGarmentOverlayStyle = (category) => {
-    switch (category) {
-      case 'pants-trousers':
-        return {
-          position: 'absolute',
-          top: '36%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '68%',
-          height: '62%',
-          objectFit: 'contain',
-        };
-      case 't-shirts':
-      case 'shirts':
-      case 'hoodies-sweatshirts':
-      case 'jackets-outerwear':
-        return {
-          position: 'absolute',
-          top: '16%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '74%',
-          height: '46%',
-          objectFit: 'contain',
-        };
-      case 'hats':
-        return {
-          position: 'absolute',
-          top: '2%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '45%',
-          height: '22%',
-          objectFit: 'contain',
-        };
-      case 'shoes-sneakers':
-        return {
-          position: 'absolute',
-          bottom: '2%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '62%',
-          height: '18%',
-          objectFit: 'contain',
-        };
-      default:
-        return {
-          position: 'absolute',
-          top: '25%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '70%',
-          height: '55%',
-          objectFit: 'contain',
-        };
+
+  // Trigger LightX 100% Real Generative AI Virtual Try-On
+  // The API key is stored securely in server/.env — never exposed to the browser.
+  const triggerLightXSynthesis = async (product, personImage) => {
+    if (!product) return;
+    if (isLightXGenerating) return; // Prevent duplicate requests
+
+    const targetPerson = personImage || customUserPhoto || activeModel.fullBody || '/assets/images/tryon/model-man.jpg';
+
+    // Check if result is already cached for this product to avoid redundant API calls
+    const cached = getCachedTryOnResult(targetPerson, product.id || product.name);
+    if (cached) {
+      setAiGeneratedImage(cached);
+      toast.success('Loaded try-on preview from cache!');
+      return;
+    }
+
+    try {
+      setIsLightXGenerating(true);
+      setLightXProgress(10);
+
+      // Backend receives model image URL + product cloth image URL,
+      // calls LightX v2/aivirtualtryon with the server-side API key,
+      // polls until done, and returns the AI-generated output URL.
+      const result = await runLightXVirtualTryOn({
+        personImageUrl: targetPerson,
+        product: product,
+        onProgress: ({ progress }) => setLightXProgress(progress)
+      });
+
+      if (result.outputUrl) {
+        setAiGeneratedImage(result.outputUrl);
+        toast.success(customUserPhoto ? 'Outfit successfully fitted on your photo!' : 'Try-On generated successfully with LightX AI!');
+      }
+    } catch (err) {
+      console.error('LightX Virtual Try-On Error:', err);
+      toast.error(err.message || 'Virtual Try-On failed. Ensure the backend server is running.');
+    } finally {
+      setIsLightXGenerating(false);
     }
   };
 
-  // Sync selectedProduct & trigger Google Gemini AI Flow when product changes
+  // When a product is selected → check cache first, DO NOT auto-trigger to save API credits
   useEffect(() => {
     if (selectedProduct) {
-      // Add to picked items list
+      // Add to picked history list
       setPickedItems((prev) => {
         const exists = prev.some((item) => item.id === selectedProduct.id);
-        if (!exists) {
-          return [...prev, selectedProduct];
-        }
-        return prev;
+        return exists ? prev : [...prev, selectedProduct];
       });
 
-      // 1. GSAP Animated Garment Wear onto Mannequin Body
-      if (garmentRef.current) {
-        gsap.fromTo(
-          garmentRef.current,
-          { opacity: 0, scale: 0.85 },
-          { opacity: 1, scale: 1, duration: 1.2, ease: 'power2.out' }
-        );
+      const targetPerson = customUserPhoto || activeModel.fullBody || '/assets/images/tryon/model-man.jpg';
+
+      // Check if this product was already generated and cached
+      const cached = getCachedTryOnResult(targetPerson, selectedProduct.id || selectedProduct.name);
+      if (cached) {
+        setAiGeneratedImage(cached);
+      } else {
+        setAiGeneratedImage(null);
       }
 
-      // 2. Trigger Google Gemini AI Scanner Beam Flow
-      setIsAiProcessing(true);
-      if (scannerRef.current) {
-        gsap.fromTo(
-          scannerRef.current,
-          { top: '0%' },
-          { top: '100%', duration: 1.5, repeat: 1, yoyo: true, ease: 'power1.inOut' }
-        );
-      }
-
-      // 3. Call Google Gemini AI Service
-      generateAiTryOnFitAnalysis(selectedProduct, geminiApiKey).then(() => {
-        setIsAiProcessing(false);
-      });
+      // Optional background fit insights
+      generateAiTryOnFitAnalysis(selectedProduct, '').then((res) => {
+        setFitInsights(res);
+      }).catch(() => {});
     }
-  }, [selectedProduct, geminiApiKey]);
+  }, [selectedProduct]);
 
-  // Track exact mouse position to zoom in at the exact cursor focal point
+  const currentProduct = selectedProduct || (pickedItems.length > 0 ? pickedItems[pickedItems.length - 1] : null);
+
+  // Mouse move zoom coordinates
   const handleMouseMove = (e) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
     setTransformOrigin(`${x}% ${y}%`);
+    setIsHovered(true);
+  };
+
+  const handleMouseEnter = () => {
     setIsHovered(true);
   };
 
   const handleMouseLeave = () => {
     setIsHovered(false);
-    setTransformOrigin('50% 50%');
-  };
-
-  if (!isOpen) return null;
-
-  const currentProduct = selectedProduct || pickedItems[pickedItems.length - 1] || null;
-
-  const handleRemovePick = (productId) => {
-    const updated = pickedItems.filter((item) => item.id !== productId);
-    setPickedItems(updated);
-    if (currentProduct?.id === productId) {
-      setProduct(updated[updated.length - 1] || null);
-    }
-  };
-
-  const handleSaveApiKey = (e) => {
-    e.preventDefault();
-    if (!tempKeyInput.trim()) {
-      toast.error('Please enter a valid Gemini API key');
-      return;
-    }
-    const cleanKey = tempKeyInput.trim();
-    localStorage.setItem('gemini_api_key', cleanKey);
-    setGeminiApiKey(cleanKey);
-    setShowApiKeyModal(false);
-    toast.success('Google Gemini API Key saved! AI Drape Flow active.');
   };
 
   const handleStartOver = () => {
     setPickedItems([]);
     setProduct(null);
-    setIsManualZoom(false);
-    toast('Fitting room reset to bare mannequin', { icon: '🔄' });
+    setAiGeneratedImage(null);
+    setCustomUserPhoto(null);
+    toast.success('Fitting room cleared');
   };
 
-  const handleAddToCart = () => {
-    if (!currentProduct) {
-      toast.error('No clothing item selected on mannequin');
+  const handleRemovePick = (productId) => {
+    setPickedItems((prev) => prev.filter((item) => item.id !== productId));
+    if (selectedProduct?.id === productId) {
+      const remaining = pickedItems.filter((item) => item.id !== productId);
+      setProduct(remaining.length > 0 ? remaining[remaining.length - 1] : null);
+      setAiGeneratedImage(null);
+    }
+  };
+
+
+
+  // User photo upload from gallery / device
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 15 * 1024 * 1024) {
+        toast.error('Image size must be less than 15MB');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        const photoUrl = uploadEvent.target.result;
+        setCustomUserPhoto(photoUrl);
+        setAiGeneratedImage(null);
+        toast.success('Your photo loaded! Ready for AI Try-On ✨');
+        if (currentProduct) {
+          triggerLightXSynthesis(currentProduct, photoUrl);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
+
+  // User photo selected via Camera modal (Capture or Gallery)
+  const handlePhotoSelected = (photoDataUrl) => {
+    setCustomUserPhoto(photoDataUrl);
+    setAiGeneratedImage(null);
+    toast.success('Your photo loaded! Ready for AI Try-On ✨');
+    if (currentProduct) {
+      triggerLightXSynthesis(currentProduct, photoDataUrl);
+    }
+  };
+
+  const handleAddAllToCart = () => {
+    if (pickedItems.length === 0) {
+      if (currentProduct) {
+        addItem(currentProduct, 1, currentProduct.sizes?.[0] || 'M', currentProduct.colors?.[0] || null);
+        toast.success(`Added ${currentProduct.name} to your bag!`);
+        closeTryOn();
+      } else {
+        toast.error('Please pick clothes first');
+      }
       return;
     }
-    addItem(currentProduct, currentProduct.colors?.[0] || 'Standard', currentProduct.sizes?.[0] || 'M', 1);
-    toast.success(`Added fitted "${currentProduct.name}" to shopping bag!`, {
-      style: {
-        background: '#18181c',
-        color: '#ffffff',
-        border: '1px solid #c87d4a',
-      },
+    pickedItems.forEach((item) => {
+      addItem(item, 1, item.sizes?.[0] || 'M', item.colors?.[0] || null);
     });
+    toast.success(`Added ${pickedItems.length} outfit pieces to bag!`);
     closeTryOn();
   };
 
   const activeZoom = isHovered || isManualZoom;
 
+  if (!isOpen) return null;
+
   return (
     <>
-      {/* Floating Bottom-Left Widget Dock matching reference screenshot */}
+      {/* Hidden File Input for Gallery Photo Upload */}
+      <input 
+        ref={fileInputRef} 
+        type="file" 
+        accept="image/*" 
+        className="hidden" 
+        onChange={handlePhotoUpload} 
+      />
+
+      {/* Choice & Camera Capture Modal */}
+      <CameraCaptureModal
+        isOpen={isPhotoModalOpen}
+        onClose={() => setIsPhotoModalOpen(false)}
+        onPhotoSelected={handlePhotoSelected}
+        onOpenGallery={() => fileInputRef.current?.click()}
+      />
+
+      {/* Choose a Model Modal (6 Indian Models) */}
+      <ModelSelectionModal
+        isOpen={isModelModalOpen}
+        onClose={() => setIsModelModalOpen(false)}
+        selectedModelId={selectedModelId}
+        onSelectModel={(model) => {
+          setSelectedModelId(model.id);
+          setCustomUserPhoto(null);
+          setAiGeneratedImage(null);
+          toast.success(`Selected model: ${model.name}`);
+        }}
+      />
+
+      {/* Floating Bottom-Left Widget Dock */}
       <div className="fixed bottom-6 left-6 z-50 w-80 sm:w-96 bg-[#16161a] border border-white/10 rounded-3xl p-4 shadow-2xl backdrop-blur-2xl flex flex-col space-y-3 animate-slideUp text-white">
         
         {/* Header */}
@@ -214,29 +256,48 @@ const VirtualTryOnStudio = () => {
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold text-white tracking-wide">Fitting room</h2>
               <span className="flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#c87d4a]/20 border border-[#c87d4a]/40 text-[#c87d4a] font-bold">
-                <Sparkles className="w-3 h-3 animate-spin" />
-                Gemini AI Flow
+                <Sparkles className="w-3 h-3 text-[#c87d4a]" />
+                {aiGeneratedImage ? '100% Real Fit' : 'LightX AI Ready'}
               </span>
             </div>
             <p className="text-xs text-white/50 font-light mt-0.5">
-              Tap the hanger on any product to wear it on mannequin.
+              Mix & match pieces, choose realistic models or use your photo.
             </p>
           </div>
-          <button
-            onClick={closeTryOn}
-            className="p-1 text-white/50 hover:text-white transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                setPickedItems([]);
+                setAiGeneratedImage(null);
+                setProduct(null);
+                toast('Fitting room cleared', { icon: '🧹' });
+              }}
+              className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+              title="Start over"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+            <button
+              onClick={closeTryOn}
+              className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+              title="Close fitting room"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Center Mannequin Frame */}
+
+        {/* Studio Center Canvas */}
         <div 
           ref={containerRef}
           onMouseMove={handleMouseMove}
+          onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className="relative w-full max-w-[270px] mx-auto aspect-[3/4] rounded-2xl overflow-hidden bg-[#24242a] border border-white/10 shadow-xl cursor-crosshair group"
+          className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-inner group cursor-crosshair select-none"
         >
+          {/* Zoomable Viewport */}
           <div 
             className="w-full h-full relative transition-transform duration-300 ease-out"
             style={{
@@ -245,47 +306,50 @@ const VirtualTryOnStudio = () => {
               transition: 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform-origin 0.1s linear'
             }}
           >
-            {/* Mannequin Base Image */}
+            {/* 1. Base Model Preview / User Custom Photo / AI Generated Fit */}
             <img
-              alt=""
-              aria-hidden="true"
-              title="Your mannequin, waiting to be dressed"
+              alt="Person / Model"
               loading="lazy"
-              decoding="async"
-              src={BASE_MANNEQUIN_IMAGE}
-              className="rounded-[inherit] object-cover w-full h-full filter contrast-105 brightness-100"
-              style={{
-                position: 'absolute',
-                height: '100%',
-                width: '100%',
-                inset: '0px',
-                color: 'transparent',
-              }}
+              src={aiGeneratedImage || activePersonImage}
+              className="rounded-[inherit] object-cover w-full h-full filter contrast-105 brightness-100 transition-all duration-500"
             />
 
-            {/* GSAP Animated Original Product Image Worn on Mannequin Body with Original Background Intact */}
-            {currentProduct && (
-              <div 
-                ref={garmentRef}
-                className="absolute inset-0 pointer-events-none z-10 overflow-hidden"
-              >
-                <img
-                  src={currentProduct.tryOnOverlay || currentProduct.images[0]}
-                  alt={currentProduct.name}
-                  style={getGarmentOverlayStyle(currentProduct.category)}
-                  className="transition-all duration-300 shadow-md rounded-xl"
-                />
+            {/* 2. Loading State while LightX API is processing */}
+            {isLightXGenerating && (
+              <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center space-y-4 animate-fadeIn">
+                <div className="relative w-14 h-14">
+                  <div className="w-14 h-14 rounded-full border-3 border-[#c87d4a]/20 border-t-[#c87d4a] animate-spin" />
+                  <Wand2 className="w-6 h-6 text-[#c87d4a] absolute inset-0 m-auto animate-pulse" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-white tracking-wide">Trying on your outfit...</p>
+                  <p className="text-xs text-white/60">LightX AI synthesizing natural garment fit</p>
+                </div>
+                <div className="w-48 bg-white/10 h-2 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-[#c87d4a] to-[#e09865] h-full transition-all duration-300 rounded-full" 
+                    style={{ width: `${lightXProgress}%` }}
+                  />
+                </div>
+                <span className="text-xs font-mono text-[#c87d4a] font-bold">{lightXProgress}%</span>
               </div>
             )}
-
-            {/* Google Gemini AI Scanning Laser Beam Effect */}
-            {isAiProcessing && (
-              <div 
-                ref={scannerRef}
-                className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#c87d4a] to-transparent shadow-[0_0_15px_#c87d4a] z-20 pointer-events-none"
-              />
-            )}
           </div>
+
+          {/* Model Tag on Top Left */}
+          <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 text-[9px] text-white/80">
+            {customUserPhoto ? '📸 Your Photo' : `👤 ${activeModel.name}`}
+          </div>
+
+          {/* Quick Upload / Camera Button on Canvas Top Right */}
+          <button
+            onClick={() => setIsPhotoModalOpen(true)}
+            className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 bg-black/75 hover:bg-black/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20 hover:border-[#c87d4a] text-[10px] text-white/90 hover:text-[#c87d4a] transition-all cursor-pointer shadow-lg"
+            title="Upload from gallery or take photo with camera"
+          >
+            <Camera className="w-3 h-3 text-[#c87d4a]" />
+            <span>{customUserPhoto ? 'Change' : 'Photo'}</span>
+          </button>
 
           {/* Zoom Button Icon on Bottom Right */}
           <button
@@ -293,7 +357,7 @@ const VirtualTryOnStudio = () => {
               e.stopPropagation();
               setIsManualZoom(!isManualZoom);
             }}
-            className={`absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full border text-white flex items-center justify-center shadow-lg transition-all z-20 ${
+            className={`absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full border text-white flex items-center justify-center shadow-lg transition-all z-20 cursor-pointer ${
               activeZoom ? 'bg-[#c87d4a] border-[#c87d4a]' : 'bg-black/70 hover:bg-black/90 border-white/20'
             }`}
             title="Toggle Zoom In/Out"
@@ -301,6 +365,62 @@ const VirtualTryOnStudio = () => {
             <ZoomIn className="w-3.5 h-3.5" />
           </button>
         </div>
+
+        {/* Change Your Photo & Choose a Model Action Bar */}
+        <div className="flex items-center gap-2">
+          {/* Button 1: Change Your Photo */}
+          <button
+            onClick={() => setIsPhotoModalOpen(true)}
+            className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md ${
+              customUserPhoto
+                ? 'bg-[#c87d4a]/20 border-[#c87d4a]/60 text-[#c87d4a] hover:bg-[#c87d4a]/30'
+                : 'bg-white/10 hover:bg-white/15 border-white/20 hover:border-[#c87d4a]/50 text-white'
+            }`}
+          >
+            <Camera className="w-3.5 h-3.5 text-[#c87d4a]" />
+            <span className="truncate">{customUserPhoto ? 'Change Photo' : 'Change Your Photo'}</span>
+          </button>
+
+          {/* Button 2: Choose a Model */}
+          <button
+            onClick={() => setIsModelModalOpen(true)}
+            className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md ${
+              !customUserPhoto
+                ? 'bg-[#c87d4a]/20 border-[#c87d4a]/60 text-[#c87d4a] hover:bg-[#c87d4a]/30'
+                : 'bg-white/10 hover:bg-white/15 border-white/20 hover:border-[#c87d4a]/50 text-white'
+            }`}
+          >
+            <User className="w-3.5 h-3.5 text-[#c87d4a]" />
+            <span className="truncate">{customUserPhoto ? 'Choose a Model' : `👤 ${activeModel.name}`}</span>
+          </button>
+        </div>
+
+        {/* Action Button: Try On (Disabled while generating, uses cache if already available) */}
+        {currentProduct && !aiGeneratedImage && (
+          <button
+            onClick={() => triggerLightXSynthesis(currentProduct, activePersonImage)}
+            disabled={isLightXGenerating}
+            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#c87d4a] to-[#e09b67] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#c87d4a]/25 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>{isLightXGenerating ? 'Trying on your outfit...' : `Try On ${currentProduct.name}`}</span>
+          </button>
+        )}
+
+        {aiGeneratedImage && (
+          <div className="flex items-center gap-2">
+            <div className="flex-1 py-2 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
+              <Check className="w-4 h-4" />
+              <span>100% LightX AI Generated Fit</span>
+            </div>
+            <button
+              onClick={() => setAiGeneratedImage(null)}
+              className="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-white/70 hover:text-white text-xs font-medium transition-all"
+            >
+              Reset
+            </button>
+          </div>
+        )}
 
         {/* "Your picks" Tray */}
         <div className="space-y-2 pt-1 border-t border-white/10">
@@ -314,10 +434,19 @@ const VirtualTryOnStudio = () => {
           ) : (
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               {pickedItems.map((prod) => (
-                <div key={prod.id} className="relative flex-shrink-0 w-12 h-14 rounded-xl border border-white/20 overflow-hidden bg-[#18181c] group">
+                <div 
+                  key={prod.id} 
+                  onClick={() => setProduct(prod)}
+                  className={`relative flex-shrink-0 w-12 h-14 rounded-xl border overflow-hidden bg-[#18181c] group cursor-pointer transition-all ${
+                    selectedProduct?.id === prod.id ? 'border-[#c87d4a] ring-2 ring-[#c87d4a]/50' : 'border-white/20 opacity-70 hover:opacity-100'
+                  }`}
+                >
                   <img src={prod.images[0]} alt={prod.name} className="w-full h-full object-cover" />
                   <button
-                    onClick={() => handleRemovePick(prod.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemovePick(prod.id);
+                    }}
                     className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/80 text-white hover:bg-rose-500 flex items-center justify-center transition-colors"
                     title="Remove pick"
                   >
@@ -329,101 +458,40 @@ const VirtualTryOnStudio = () => {
           )}
         </div>
 
-        {/* Gemini AI Status Note */}
+        {/* AI Engine Status — key is now stored securely in server/.env */}
         <div className="flex items-center justify-between text-[10px]">
           <span className="text-white/50 flex items-center gap-1">
             <Cpu className="w-3 h-3 text-[#c87d4a]" />
-            Powered by Google Gemini 1.5 Flash
+            LightX AI Try-On Engine
           </span>
-          <button
-            onClick={() => {
-              setTempKeyInput(geminiApiKey);
-              setShowApiKeyModal(true);
-            }}
-            className="text-[#c87d4a] hover:underline font-bold"
-          >
-            {geminiApiKey ? '🔑 Active API Key' : 'Add API Key'}
-          </button>
+          <span className="flex items-center gap-1 text-emerald-400 font-bold">
+            <Server className="w-3 h-3" />
+            Key secured on server
+          </span>
         </div>
 
         {/* Bottom Bar: Configure Key + Start over + Add to Bag */}
         <div className="pt-1 flex items-center justify-between gap-2">
           <button
-            onClick={() => {
-              setTempKeyInput(geminiApiKey);
-              setShowApiKeyModal(true);
-            }}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-full bg-[#c87d4a] hover:bg-[#d28a57] text-white font-bold text-xs shadow-lg shadow-[#c87d4a]/20 transition-all"
-          >
-            <Key className="w-3.5 h-3.5" />
-            <span className="truncate">{geminiApiKey ? '🔑 Key Active' : 'Add your API key'}</span>
-          </button>
-
-          <button
             onClick={handleStartOver}
-            className="flex items-center gap-1 px-3 py-2.5 rounded-full text-xs font-semibold text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 text-xs font-semibold transition-colors"
+            title="Clear all picked items"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Start over</span>
+            <span className="text-[11px]">Start over</span>
           </button>
 
           <button
-            onClick={handleAddToCart}
-            className="p-2.5 rounded-full bg-white text-black hover:bg-white/90 shadow-md transition-colors"
-            title="Add fitted garment to bag"
+            onClick={handleAddAllToCart}
+            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-[#c87d4a] hover:bg-[#d28a57] text-white text-xs font-bold tracking-wide shadow-lg shadow-[#c87d4a]/20 transition-all transform hover:-translate-y-0.5"
           >
             <ShoppingBag className="w-3.5 h-3.5" />
+            <span>Add to bag</span>
           </button>
         </div>
 
       </div>
 
-      {/* Gemini API Key Config Modal */}
-      {showApiKeyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-md bg-[#18181c] border border-white/10 rounded-3xl p-6 shadow-2xl space-y-4 text-white">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-[#c87d4a] font-bold text-sm">
-                <Sparkles className="w-4 h-4" />
-                <span>Configure Google Gemini API</span>
-              </div>
-              <button onClick={() => setShowApiKeyModal(false)} className="text-white/40 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <p className="text-xs text-white/60 font-light leading-relaxed">
-              Enter your Google Gemini API Key below to activate real-time AI drape analysis and neural fitting on the 3D standing mannequin.
-            </p>
-
-            <form onSubmit={handleSaveApiKey} className="space-y-4">
-              <input
-                type="password"
-                placeholder="AIzaSy..."
-                value={tempKeyInput}
-                onChange={(e) => setTempKeyInput(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#c87d4a]"
-              />
-
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="submit"
-                  className="flex-1 py-3 rounded-xl bg-[#c87d4a] hover:bg-[#d28a57] text-white font-bold text-xs"
-                >
-                  Save API Key
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowApiKeyModal(false)}
-                  className="px-4 py-3 rounded-xl bg-white/10 text-white text-xs font-semibold"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </>
   );
 };

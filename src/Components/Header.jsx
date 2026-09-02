@@ -414,10 +414,10 @@ const Header = () => {
           </div>
 
           {/* Right Action Icons & Controls matching reference website */}
-          <div className="flex items-center space-x-3 sm:space-x-4">
+          <div className="flex items-center space-x-1 sm:space-x-3">
             
-            {/* Language Selector Dropdown */}
-            <div className="relative hidden sm:block">
+            {/* Language Selector Dropdown (Desktop) */}
+            <div className="relative hidden md:block">
               <button
                 onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium bg-white/5 border border-white/10 hover:bg-white/10 text-white/90 transition-colors"
@@ -444,8 +444,9 @@ const Header = () => {
             {/* Dark / Light Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-2 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors hidden sm:flex"
               title="Toggle theme"
+              aria-label="Toggle dark/light theme"
             >
               {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
             </button>
@@ -453,10 +454,11 @@ const Header = () => {
             {/* Search Input Trigger matching Ctrl+K pill style in reference */}
             <button
               onClick={openSearch}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white transition-all text-xs"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white transition-all text-xs"
+              aria-label="Open search modal"
             >
               <Search className="w-3.5 h-3.5" />
-              <span className="hidden md:inline font-medium">Search</span>
+              <span className="hidden sm:inline font-medium">Search</span>
               <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-white/10 text-white/50 rounded border border-white/10">
                 Ctrl+K
               </kbd>
@@ -465,11 +467,12 @@ const Header = () => {
             {/* Try-On Studio Quick Action Icon */}
             <button
               onClick={() => openTryOn(null)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#c87d4a] hover:bg-[#d28a57] text-white transition-all text-xs font-bold shadow-md shadow-[#c87d4a]/25 transform hover:scale-105 active:scale-95"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-[#c87d4a] hover:bg-[#d28a57] text-white transition-all text-xs font-bold shadow-md shadow-[#c87d4a]/25 transform hover:scale-105 active:scale-95"
               title="Virtual Try-On Studio"
+              aria-label="Open Virtual Try-On Studio"
             >
               <Shirt className="w-3.5 h-3.5 text-white" />
-              <span>Try On</span>
+              <span className="hidden xs:inline sm:inline">Try On</span>
             </button>
 
             {/* Account Icon */}
@@ -477,6 +480,7 @@ const Header = () => {
               to={isAuthenticated ? "/account" : "/login"}
               className="p-2 text-white/80 hover:text-white transition-colors"
               title={isAuthenticated ? `Account (${user?.name})` : "Sign In"}
+              aria-label="User Account"
             >
               <User className="w-4 h-4" />
             </Link>
@@ -486,6 +490,7 @@ const Header = () => {
               to="/wishlist"
               className="p-2 text-white/80 hover:text-white transition-colors relative hidden sm:block"
               title="Wishlist"
+              aria-label="Wishlist"
             >
               <Heart className="w-4 h-4" />
               {wishlistItems.length > 0 && (
@@ -513,15 +518,19 @@ const Header = () => {
 
       {/* Mobile Slide-Out Drawer Navigation */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 top-[60px] z-50 bg-[#0b0b0e]/95 backdrop-blur-xl border-t border-white/10 flex flex-col justify-between p-6">
+        <div className="lg:hidden fixed inset-0 top-[56px] sm:top-[60px] z-50 bg-[#0b0b0e]/98 backdrop-blur-2xl border-t border-white/10 flex flex-col justify-between p-5 sm:p-6 overflow-y-auto max-h-[calc(100vh-56px)] animate-fadeIn">
           <div className="space-y-6">
-            <nav className="flex flex-col space-y-4">
+            
+            {/* Main Page Links */}
+            <nav className="flex flex-col space-y-3">
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
                   to={link.path}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-lg font-medium tracking-widest text-white/90 hover:text-[#c87d4a] transition-colors"
+                  className={`text-base font-semibold tracking-wider transition-colors py-1 ${
+                    location.pathname === link.path ? 'text-[#c87d4a]' : 'text-white/90 hover:text-[#c87d4a]'
+                  }`}
                 >
                   {link.name}
                 </Link>
@@ -530,31 +539,101 @@ const Header = () => {
 
             <hr className="border-white/10" />
 
+            {/* Mobile Category Shortcuts */}
+            <div className="space-y-2">
+              <span className="text-[11px] font-mono tracking-widest text-white/40 uppercase block mb-2">
+                COLLECTIONS
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  to="/shop?category=t-shirts"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-3 py-2 rounded-xl bg-white/5 text-xs text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  T-Shirts
+                </Link>
+                <Link
+                  to="/shop?category=hoodies-sweatshirts"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-3 py-2 rounded-xl bg-white/5 text-xs text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  Hoodies
+                </Link>
+                <Link
+                  to="/shop?category=jackets-outerwear"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-3 py-2 rounded-xl bg-white/5 text-xs text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  Jackets
+                </Link>
+                <Link
+                  to="/shop?category=pants-trousers"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-3 py-2 rounded-xl bg-white/5 text-xs text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  Pants
+                </Link>
+                <Link
+                  to="/shop?category=shirts"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-3 py-2 rounded-xl bg-white/5 text-xs text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  Shirts
+                </Link>
+                <Link
+                  to="/shop?category=shoes-sneakers"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-3 py-2 rounded-xl bg-white/5 text-xs text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  Shoes
+                </Link>
+              </div>
+            </div>
+
+            <hr className="border-white/10" />
+
+            {/* Quick Actions */}
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   openTryOn(null);
                 }}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#c87d4a] text-white font-semibold text-sm shadow-lg shadow-[#c87d4a]/20"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#c87d4a] text-white font-semibold text-xs tracking-wider uppercase shadow-lg shadow-[#c87d4a]/20"
               >
                 <Shirt className="w-4 h-4" />
                 <span>Virtual Try-On Studio</span>
               </button>
 
-              <Link
-                to="/wishlist"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-3 py-2 text-white/80 hover:text-white text-sm"
-              >
-                <Heart className="w-4 h-4 text-[#c87d4a]" />
-                <span>Wishlist ({wishlistItems.length})</span>
-              </Link>
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  to="/wishlist"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-white/5 border border-white/10 text-white/80 text-xs font-medium"
+                >
+                  <Heart className="w-3.5 h-3.5 text-[#c87d4a]" />
+                  <span>Wishlist ({wishlistItems.length})</span>
+                </Link>
+
+                <button
+                  onClick={toggleTheme}
+                  className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-white/5 border border-white/10 text-white/80 text-xs font-medium"
+                >
+                  {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
+                  <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="pt-6 border-t border-white/10 text-xs text-white/40 text-center">
-            STORE © 2026 Luxury Fashion Platform
+          {/* Footer inside mobile drawer */}
+          <div className="pt-6 mt-6 border-t border-white/10 text-[11px] text-white/40 flex items-center justify-between">
+            <span>STORE © 2026</span>
+            <div className="flex items-center gap-3">
+              <Link to="/faq" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-white">FAQ</Link>
+              <Link to="/contact" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-white">Contact</Link>
+              <Link to="/orders" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-white">Track</Link>
+            </div>
           </div>
         </div>
       )}

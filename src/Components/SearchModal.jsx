@@ -2,12 +2,13 @@ import React, { useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, X, History, TrendingUp, ArrowRight, Star } from 'lucide-react';
 import { useSearchStore } from '../store/useSearchStore';
-import { PRODUCTS } from '../data/products';
+import { useProductStore } from '../store/useProductStore';
 
 const SearchModal = () => {
   const navigate = useNavigate();
   const inputRef = useRef(null);
   const { isOpen, closeSearch, query, setQuery, history, addHistory, clearHistory } = useSearchStore();
+  const { products } = useProductStore();
 
   useEffect(() => {
     if (isOpen) {
@@ -17,7 +18,7 @@ const SearchModal = () => {
 
   if (!isOpen) return null;
 
-  const filteredProducts = query.trim() === '' ? [] : PRODUCTS.filter((p) => {
+  const filteredProducts = query.trim() === '' ? [] : products.filter((p) => {
     const q = query.toLowerCase();
     return (
       p.name.toLowerCase().includes(q) ||
@@ -39,7 +40,7 @@ const SearchModal = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4 bg-black/80 backdrop-blur-xl animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-16 px-3 sm:px-4 bg-black/80 backdrop-blur-xl animate-fadeIn">
       
       <div 
         className="fixed inset-0"
@@ -49,34 +50,35 @@ const SearchModal = () => {
       <div className="relative w-full max-w-2xl bg-[#121216] border border-white/10 rounded-3xl shadow-2xl overflow-hidden z-10">
         
         {/* Search Input Bar */}
-        <div className="p-4 border-b border-white/10 flex items-center gap-3">
-          <Search className="w-5 h-5 text-[#c87d4a]" />
+        <div className="p-3.5 sm:p-4 border-b border-white/10 flex items-center gap-2 sm:gap-3">
+          <Search className="w-4 h-4 sm:w-5 sm:h-5 text-[#c87d4a] flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search luxury fashion, coats, silk, boots..."
+            placeholder="Search luxury fashion, coats, silk..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full bg-transparent text-white placeholder-white/40 text-base focus:outline-none"
+            className="w-full bg-transparent text-white placeholder-white/40 text-sm sm:text-base focus:outline-none"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
               className="p-1 text-white/40 hover:text-white"
+              aria-label="Clear search"
             >
               <X className="w-4 h-4" />
             </button>
           )}
           <button
             onClick={closeSearch}
-            className="px-2.5 py-1 text-xs font-semibold text-white/60 hover:text-white bg-white/5 rounded-lg border border-white/10"
+            className="px-2.5 py-1 text-xs font-semibold text-white/60 hover:text-white bg-white/5 rounded-lg border border-white/10 flex-shrink-0"
           >
             ESC
           </button>
         </div>
 
         {/* Content Body */}
-        <div className="max-h-[65vh] overflow-y-auto p-6 space-y-6">
+        <div className="max-h-[70vh] sm:max-h-[65vh] overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           
           {/* Query Results */}
           {query.trim() !== '' ? (

@@ -28,15 +28,15 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 py-16 space-y-8">
+    <div className="max-w-md mx-auto px-4 py-8 sm:py-16 space-y-6 sm:space-y-8">
       <Breadcrumbs items={[{ label: 'Register Account' }]} />
 
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-serif font-bold text-white uppercase tracking-wider">Join STORE Privé</h1>
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white uppercase tracking-wider">Join STORE Privé</h1>
         <p className="text-xs text-white/50 font-light">Create your account for personalized recommendations & rewards.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-8 rounded-3xl bg-[#121216] border border-white/10 space-y-4">
+      <form onSubmit={handleSubmit} className="p-5 sm:p-8 rounded-3xl bg-[#121216] border border-white/10 space-y-4">
         <div>
           <label className="text-xs font-semibold text-white/60 uppercase block mb-1">Full Name *</label>
           <input

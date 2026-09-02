@@ -32,16 +32,16 @@ const AccountPage = () => {
       <Breadcrumbs items={[{ label: 'My Account' }]} />
 
       {/* User Info Header */}
-      <div className="p-8 rounded-3xl bg-[#121216] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-5 text-center sm:text-left">
+      <div className="p-5 sm:p-8 rounded-3xl bg-[#121216] border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-5 sm:gap-6">
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 text-center sm:text-left">
           <img
             src={user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80'}
             alt={user?.name}
-            className="w-20 h-20 rounded-full object-cover border-2 border-[#c87d4a]"
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-[#c87d4a]"
           />
           <div>
-            <div className="flex items-center justify-center sm:justify-start gap-2">
-              <h1 className="text-2xl font-serif font-bold text-white">{user?.name}</h1>
+            <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-serif font-bold text-white">{user?.name}</h1>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#c87d4a]/20 text-[#c87d4a] uppercase">VIP Member</span>
             </div>
             <p className="text-xs text-white/50 mt-1">{user?.email} • Member since {user?.memberSince}</p>
@@ -50,7 +50,7 @@ const AccountPage = () => {
 
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 hover:bg-rose-500/20 text-white/70 hover:text-rose-400 border border-white/10 hover:border-rose-500/40 text-xs font-semibold transition-all"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 hover:bg-rose-500/20 text-white/70 hover:text-rose-400 border border-white/10 hover:border-rose-500/40 text-xs font-semibold transition-all"
         >
           <LogOut className="w-4 h-4" />
           <span>Sign Out</span>

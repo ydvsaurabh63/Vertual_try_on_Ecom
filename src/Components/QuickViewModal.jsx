@@ -50,34 +50,35 @@ const QuickViewModal = () => {
         onClick={closeQuickView}
       />
 
-      <div className="relative w-full max-w-4xl bg-[#121216] border border-white/10 rounded-3xl shadow-2xl overflow-hidden z-10 flex flex-col md:flex-row max-h-[90vh]">
+      <div className="relative w-full max-w-4xl bg-[#121216] border border-white/10 rounded-3xl shadow-2xl overflow-y-auto max-h-[92vh] z-10 flex flex-col md:flex-row">
         
         {/* Close Button */}
         <button
           onClick={closeQuickView}
-          className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+          aria-label="Close preview"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
         {/* LEFT: Image Gallery */}
-        <div className="md:w-1/2 p-6 bg-[#0b0b0e] flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-white/10">
-          <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden bg-[#18181c] border border-white/10 mb-4">
+        <div className="md:w-1/2 p-4 sm:p-6 bg-[#0b0b0e] flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-white/10 flex-shrink-0">
+          <div className="relative w-full aspect-[4/3] sm:aspect-[3/4] max-h-72 sm:max-h-none rounded-2xl overflow-hidden bg-[#18181c] border border-white/10 mb-3 sm:mb-4">
             <img
               src={product.images[activeImage] || product.images[0]}
               alt={product.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain p-4 sm:p-6"
             />
           </div>
 
           {/* Thumbnails */}
           {product.images?.length > 1 && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 overflow-x-auto max-w-full pb-1">
               {product.images.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActiveImage(idx)}
-                  className={`w-14 h-16 rounded-xl overflow-hidden border transition-all ${
+                  className={`w-12 h-14 sm:w-14 sm:h-16 rounded-xl overflow-hidden border transition-all flex-shrink-0 ${
                     activeImage === idx ? 'border-[#c87d4a] scale-105' : 'border-white/10 opacity-60 hover:opacity-100'
                   }`}
                 >
@@ -89,7 +90,7 @@ const QuickViewModal = () => {
         </div>
 
         {/* RIGHT: Product Details & Options */}
-        <div className="md:w-1/2 p-6 flex flex-col justify-between overflow-y-auto">
+        <div className="md:w-1/2 p-4 sm:p-6 flex flex-col justify-between space-y-4">
           
           <div className="space-y-4">
             {/* Category & Rating */}

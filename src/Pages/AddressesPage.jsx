@@ -32,18 +32,18 @@ const AddressesPage = () => {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       <Breadcrumbs items={[{ label: 'Account', path: '/account' }, { label: 'Addresses' }]} />
 
-      <div className="flex items-center justify-between border-b border-white/10 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-white flex items-center gap-3">
-            <MapPin className="w-7 h-7 text-[#c87d4a]" />
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white flex items-center gap-3">
+            <MapPin className="w-6 h-6 sm:w-7 sm:h-7 text-[#c87d4a]" />
             <span>Saved Shipping Addresses</span>
           </h1>
-          <p className="text-xs text-white/50 mt-1">Manage delivery locations for express checkout.</p>
+          <p className="text-xs text-white/50 mt-1 font-light">Manage delivery locations for express checkout.</p>
         </div>
 
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#c87d4a] text-white text-xs font-bold uppercase tracking-wider"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#c87d4a] text-white text-xs font-bold uppercase tracking-wider self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Add Address</span>
@@ -51,7 +51,7 @@ const AddressesPage = () => {
       </div>
 
       {showAddForm && (
-        <form onSubmit={handleAdd} className="p-6 rounded-3xl bg-[#121216] border border-white/10 space-y-4">
+        <form onSubmit={handleAdd} className="p-5 sm:p-6 rounded-3xl bg-[#121216] border border-white/10 space-y-4">
           <h3 className="text-sm font-bold text-white uppercase">New Delivery Address</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <input

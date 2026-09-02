@@ -24,15 +24,15 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 py-16 space-y-8">
+    <div className="max-w-md mx-auto px-4 py-8 sm:py-16 space-y-6 sm:space-y-8">
       <Breadcrumbs items={[{ label: 'Sign In' }]} />
 
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-serif font-bold text-white uppercase tracking-wider">STORE Privé</h1>
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white uppercase tracking-wider">STORE Privé</h1>
         <p className="text-xs text-white/50 font-light">Sign in to access your personal wardrobe & orders.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-8 rounded-3xl bg-[#121216] border border-white/10 space-y-5">
+      <form onSubmit={handleSubmit} className="p-5 sm:p-8 rounded-3xl bg-[#121216] border border-white/10 space-y-5">
         <div>
           <label className="text-xs font-semibold text-white/60 uppercase block mb-1">Email Address</label>
           <div className="relative">
