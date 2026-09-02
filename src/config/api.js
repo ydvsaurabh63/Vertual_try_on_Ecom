@@ -1,11 +1,12 @@
 /**
  * Central API Configuration
- * Reads VITE_API_URL if set (e.g. on Vercel: https://vertual-try-on-ecom-backend.onrender.com)
- * Fallback to empty string for local relative /api proxy
+ * Defaults to live Render Backend URL so Vercel deployment works out of the box!
  */
 
-const RAW_API_URL = import.meta.env.VITE_API_URL || '';
+const FALLBACK_BACKEND_URL = 'https://vertual-try-on-ecom-backend.onrender.com';
+const RAW_API_URL = import.meta.env.VITE_API_URL || FALLBACK_BACKEND_URL;
+
 export const API_BASE_URL = RAW_API_URL.replace(/\/$/, '');
-export const API_URL = API_BASE_URL ? `${API_BASE_URL}/api` : '/api';
+export const API_URL = `${API_BASE_URL}/api`;
 
 export default API_URL;
