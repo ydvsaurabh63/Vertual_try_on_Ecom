@@ -251,19 +251,8 @@ const VirtualTryOnStudio = () => {
       <div className="fixed inset-x-3 bottom-3 sm:inset-x-auto sm:left-6 sm:bottom-6 z-50 w-auto sm:w-96 max-w-[calc(100vw-24px)] max-h-[88vh] overflow-y-auto bg-[#16161a] border border-white/10 rounded-3xl p-3.5 sm:p-4 shadow-2xl backdrop-blur-2xl flex flex-col space-y-2.5 sm:space-y-3 animate-slideUp text-white scrollbar-thin scrollbar-thumb-white/10">
         
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-white tracking-wide">Fitting room</h2>
-              <span className="flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#c87d4a]/20 border border-[#c87d4a]/40 text-[#c87d4a] font-bold">
-                <Sparkles className="w-3 h-3 text-[#c87d4a]" />
-                {aiGeneratedImage ? '100% Real Fit' : 'LightX AI Ready'}
-              </span>
-            </div>
-            <p className="text-xs text-white/50 font-light mt-0.5">
-              Mix & match pieces, choose realistic models or use your photo.
-            </p>
-          </div>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-white tracking-wide">Fitting room</h2>
 
           <div className="flex items-center gap-1">
             <button
@@ -274,7 +263,7 @@ const VirtualTryOnStudio = () => {
                 toast('Fitting room cleared', { icon: '🧹' });
               }}
               className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
-              title="Start over"
+              title="Reset"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -458,32 +447,11 @@ const VirtualTryOnStudio = () => {
           )}
         </div>
 
-        {/* AI Engine Status — key is now stored securely in server/.env */}
-        <div className="flex items-center justify-between text-[10px]">
-          <span className="text-white/50 flex items-center gap-1">
-            <Cpu className="w-3 h-3 text-[#c87d4a]" />
-            LightX AI Try-On Engine
-          </span>
-          <span className="flex items-center gap-1 text-emerald-400 font-bold">
-            <Server className="w-3 h-3" />
-            Key secured on server
-          </span>
-        </div>
-
-        {/* Bottom Bar: Configure Key + Start over + Add to Bag */}
-        <div className="pt-1 flex items-center justify-between gap-2">
-          <button
-            onClick={handleStartOver}
-            className="flex items-center gap-1 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 text-xs font-semibold transition-colors"
-            title="Clear all picked items"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="text-[11px]">Start over</span>
-          </button>
-
+        {/* Bottom Bar: Add to Bag */}
+        <div className="pt-1">
           <button
             onClick={handleAddAllToCart}
-            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-[#c87d4a] hover:bg-[#d28a57] text-white text-xs font-bold tracking-wide shadow-lg shadow-[#c87d4a]/20 transition-all transform hover:-translate-y-0.5"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#c87d4a] hover:bg-[#d28a57] text-white text-xs font-bold tracking-wide shadow-lg shadow-[#c87d4a]/20 transition-all transform hover:-translate-y-0.5 cursor-pointer"
           >
             <ShoppingBag className="w-3.5 h-3.5" />
             <span>Add to bag</span>
