@@ -43,10 +43,10 @@ const VirtualTryOnStudio = () => {
   const activeModel = (TRY_ON_MODELS && TRY_ON_MODELS.find((m) => m.id === selectedModelId)) || (TRY_ON_MODELS && TRY_ON_MODELS[0]) || {
     id: 'm-arjun',
     name: 'Arjun Sharma',
-    fullBody: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80',
-    avatar: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=400&q=80',
+    fullBody: '/assets/images/tryon/arjun-model.jpg',
+    avatar: '/assets/images/tryon/arjun-model.jpg',
   };
-  const activePersonImage = customUserPhoto || activeModel?.fullBody || 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80';
+  const activePersonImage = customUserPhoto || activeModel?.fullBody || '/assets/images/tryon/arjun-model.jpg';
 
   useEffect(() => {
     // Clear stale try-on cache on mount so old results don't linger

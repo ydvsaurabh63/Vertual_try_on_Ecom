@@ -186,8 +186,8 @@ const VirtualTryOnPage = () => {
   const currentModel = selectedModel || TRY_ON_MODELS[0] || {
     id: 'm-arjun',
     name: 'Arjun Sharma',
-    fullBody: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80',
-    avatar: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=400&q=80',
+    fullBody: '/assets/images/tryon/arjun-model.jpg',
+    avatar: '/assets/images/tryon/arjun-model.jpg',
   };
 
   const activeDisplayImage = (aiResultImage && !showOriginal) ? aiResultImage : (currentModel.fullBody || currentModel.avatar);
