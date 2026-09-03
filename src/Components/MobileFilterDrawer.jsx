@@ -32,7 +32,7 @@ const MobileFilterDrawer = () => {
             <FilterSidebar isDrawer={true} />
           </div>
 
-          <div className="pt-4 mt-4 border-t border-white/10">
+          <div className="pt-4 mt-4 border-t border-white/10 pb-safe">
             <button
               onClick={closeMobileFilter}
               className="w-full py-3 rounded-xl bg-[#c87d4a] text-white font-semibold text-xs tracking-wider uppercase"

@@ -247,8 +247,8 @@ const VirtualTryOnStudio = () => {
         }}
       />
 
-      {/* Floating Bottom-Left Widget Dock */}
-      <div className="fixed bottom-6 left-6 z-50 w-80 sm:w-96 bg-[#16161a] border border-white/10 rounded-3xl p-4 shadow-2xl backdrop-blur-2xl flex flex-col space-y-3 animate-slideUp text-white">
+      {/* Floating Bottom-Left Widget Dock (100% Mobile Responsive Bottom Sheet / Dock) */}
+      <div className="fixed inset-x-3 bottom-3 sm:inset-x-auto sm:left-6 sm:bottom-6 z-50 w-auto sm:w-96 max-w-[calc(100vw-24px)] max-h-[88vh] overflow-y-auto bg-[#16161a] border border-white/10 rounded-3xl p-3.5 sm:p-4 shadow-2xl backdrop-blur-2xl flex flex-col space-y-2.5 sm:space-y-3 animate-slideUp text-white scrollbar-thin scrollbar-thumb-white/10">
         
         {/* Header */}
         <div className="flex items-start justify-between">

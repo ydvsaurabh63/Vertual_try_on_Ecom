@@ -228,7 +228,7 @@ const VirtualTryOnPage = () => {
       <div className="rounded-3xl bg-[#121216] border border-white/10 overflow-hidden flex flex-col lg:flex-row min-h-[600px] shadow-2xl">
         
         {/* LEFT: Canvas Model Display */}
-        <div className="lg:w-1/2 bg-[#0b0b0e] p-8 flex flex-col items-center justify-center relative border-b lg:border-b-0 lg:border-r border-white/10">
+        <div className="lg:w-1/2 bg-[#0b0b0e] p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center relative border-b lg:border-b-0 lg:border-r border-white/10">
           
           <div className="relative w-full max-w-sm aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-[#18181c] group">
             
@@ -309,37 +309,37 @@ const VirtualTryOnPage = () => {
         </div>
 
         {/* RIGHT: Controls & Trigger */}
-        <div className="lg:w-1/2 p-8 flex flex-col justify-between space-y-6">
+        <div className="lg:w-1/2 p-4 sm:p-6 lg:p-8 flex flex-col justify-between space-y-6">
           
           <div className="space-y-6">
             {selectedProduct && (
               <div>
                 <span className="text-xs font-mono uppercase text-[#c87d4a] tracking-widest">{selectedProduct.category}</span>
-                <h2 className="text-2xl font-bold text-white">{selectedProduct.name}</h2>
-                <p className="text-xl font-extrabold text-[#c87d4a] mt-1">${selectedProduct.finalPrice || selectedProduct.price}</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-white">{selectedProduct.name}</h2>
+                <p className="text-lg sm:text-xl font-extrabold text-[#c87d4a] mt-1">${selectedProduct.finalPrice || selectedProduct.price}</p>
               </div>
             )}
 
             {/* 1. Avatar Models Grid */}
             <div className="space-y-3">
               <label className="text-xs font-bold text-white/60 uppercase tracking-wider block">1. Select Dummy Person / Mannequin</label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
                 {TRY_ON_MODELS.map((model) => (
                   <button
                     key={model.id}
                     type="button"
                     disabled={isGenerating}
                     onClick={() => handleModelChange(model)}
-                    className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all cursor-pointer disabled:opacity-50 ${
+                    className={`flex items-center gap-2.5 p-2.5 sm:p-3 rounded-2xl border text-left transition-all cursor-pointer disabled:opacity-50 ${
                       currentModel.id === model.id
                         ? 'bg-[#c87d4a]/20 border-[#c87d4a] text-white font-bold ring-1 ring-[#c87d4a]'
                         : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'
                     }`}
                   >
-                    <img src={model.avatar} alt={model.name} className="w-10 h-10 rounded-full object-cover border border-white/20" />
-                    <div>
-                      <p className="text-xs font-bold text-white line-clamp-1">{model.name}</p>
-                      <p className="text-[10px] text-white/40">{model.height}</p>
+                    <img src={model.avatar} alt={model.name} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border border-white/20 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-white truncate">{model.name}</p>
+                      <p className="text-[10px] text-white/40 truncate">{model.height}</p>
                     </div>
                   </button>
                 ))}

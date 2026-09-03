@@ -362,7 +362,7 @@ const ProductDetailPage = () => {
 
       {/* Related Products Section */}
       {relatedProducts.length > 0 && (
-        <section className="pt-12 border-t border-white/10 space-y-6">
+        <section className="pt-12 border-t border-white/10 space-y-6 pb-20 sm:pb-0">
           <div>
             <span className="text-xs font-mono uppercase tracking-widest text-[#c87d4a]">
               COMPLETE THE LOOK
@@ -373,8 +373,29 @@ const ProductDetailPage = () => {
         </section>
       )}
 
+      {/* Sticky Mobile Bottom Bar for Fast Try-On & Checkout */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#121216]/95 backdrop-blur-xl border-t border-white/10 p-3 pb-safe flex items-center gap-2 shadow-2xl">
+        <button
+          onClick={() => openTryOn(product)}
+          className="p-3 rounded-xl bg-white/10 text-[#c87d4a] border border-white/15 flex items-center justify-center flex-shrink-0"
+          title="Virtual Try-On"
+          aria-label="Virtual Try-On"
+        >
+          <Shirt className="w-5 h-5" />
+        </button>
+
+        <button
+          onClick={handleAddToCart}
+          className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#c87d4a] active:bg-[#b56d3c] text-white text-xs font-bold shadow-lg shadow-[#c87d4a]/25"
+        >
+          <ShoppingBag className="w-4 h-4" />
+          <span>Add to Bag • ${product.price}</span>
+        </button>
+      </div>
+
     </div>
   );
 };
 
 export default ProductDetailPage;
+
