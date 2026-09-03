@@ -311,7 +311,7 @@ const VirtualTryOnStudio = () => {
               alt="Person / Model"
               loading="lazy"
               src={aiGeneratedImage || activePersonImage}
-              className="rounded-[inherit] object-cover w-full h-full filter contrast-105 brightness-100 transition-all duration-500"
+              className="rounded-[inherit] object-contain w-full h-full filter contrast-105 brightness-100 transition-all duration-500"
             />
 
             {/* 2. Loading State while LightX API is processing */}

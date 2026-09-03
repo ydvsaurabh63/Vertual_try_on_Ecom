@@ -236,7 +236,7 @@ const VirtualTryOnPage = () => {
             <img
               src={activeDisplayImage}
               alt={currentModel.name}
-              className="w-full h-full object-cover filter brightness-95 transition-all duration-500"
+              className="w-full h-full object-contain filter brightness-95 transition-all duration-500"
             />
 
             {/* Instant Garment Fit on Mannequin when product is selected */}
