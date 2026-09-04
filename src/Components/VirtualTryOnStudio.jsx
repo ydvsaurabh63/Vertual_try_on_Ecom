@@ -258,12 +258,12 @@ const VirtualTryOnStudio = () => {
         }}
       />
 
-      {/* Floating Widget Dock (Top-Left on Mobile / Bottom-Left on Desktop) */}
-      <div className="fixed top-18 left-3 bottom-auto sm:top-auto sm:bottom-6 sm:left-6 z-50 w-[260px] xs:w-[280px] sm:w-96 max-w-[calc(100vw-24px)] max-h-[52vh] sm:max-h-[88vh] overflow-y-auto bg-[#16161a]/95 sm:bg-[#16161a] border border-white/15 sm:border-white/10 rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 shadow-2xl backdrop-blur-2xl flex flex-col space-y-2 sm:space-y-3 animate-slideDown sm:animate-slideUp text-white scrollbar-thin scrollbar-thumb-white/10">
+      {/* Floating Widget Dock (Top-Left on Mobile / Compact Bottom-Left on Desktop) */}
+      <div className="fixed top-18 left-3 bottom-auto sm:top-auto sm:bottom-6 sm:left-6 z-50 w-[235px] xs:w-[250px] sm:w-[275px] md:w-[290px] max-w-[calc(100vw-24px)] max-h-[52vh] sm:max-h-[86vh] overflow-y-auto bg-[#16161a]/95 sm:bg-[#16161a] border border-white/15 sm:border-white/10 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 shadow-2xl backdrop-blur-2xl flex flex-col space-y-2 sm:space-y-2.5 animate-slideDown sm:animate-slideUp text-white scrollbar-thin scrollbar-thumb-white/10">
         
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-sm sm:text-lg font-bold text-white tracking-wide">Fitting room</h2>
+          <h2 className="text-sm sm:text-base font-bold text-white tracking-wide">Fitting room</h2>
 
           <div className="flex items-center gap-1">
             <button
@@ -323,16 +323,16 @@ const VirtualTryOnStudio = () => {
 
             {/* 2. Loading State while LightX API is processing */}
             {isLightXGenerating && (
-              <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-30 flex flex-col items-center justify-center p-3 sm:p-6 text-center space-y-2 sm:space-y-4 animate-fadeIn">
-                <div className="relative w-10 h-10 sm:w-14 sm:h-14">
-                  <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 sm:border-3 border-[#c87d4a]/20 border-t-[#c87d4a] animate-spin" />
-                  <Wand2 className="w-4 h-4 sm:w-6 sm:h-6 text-[#c87d4a] absolute inset-0 m-auto animate-pulse" />
+              <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-30 flex flex-col items-center justify-center p-3 sm:p-5 text-center space-y-2 sm:space-y-3 animate-fadeIn">
+                <div className="relative w-10 h-10 sm:w-12 sm:h-12">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 sm:border-3 border-[#c87d4a]/20 border-t-[#c87d4a] animate-spin" />
+                  <Wand2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#c87d4a] absolute inset-0 m-auto animate-pulse" />
                 </div>
                 <div className="space-y-0.5 sm:space-y-1">
                   <p className="text-xs sm:text-sm font-bold text-white tracking-wide">Trying on outfit...</p>
                   <p className="text-[10px] sm:text-xs text-white/60">LightX AI synthesizing fit</p>
                 </div>
-                <div className="w-32 sm:w-48 bg-white/10 h-1.5 sm:h-2 rounded-full overflow-hidden">
+                <div className="w-32 sm:w-40 bg-white/10 h-1.5 sm:h-2 rounded-full overflow-hidden">
                   <div 
                     className="bg-gradient-to-r from-[#c87d4a] to-[#e09865] h-full transition-all duration-300 rounded-full" 
                     style={{ width: `${lightXProgress}%` }}
@@ -364,7 +364,7 @@ const VirtualTryOnStudio = () => {
               e.stopPropagation();
               setIsManualZoom(!isManualZoom);
             }}
-            className={`absolute bottom-2 right-2 sm:bottom-2.5 sm:right-2.5 w-6 h-6 sm:w-8 sm:h-8 rounded-full border text-white flex items-center justify-center shadow-lg transition-all z-20 cursor-pointer ${
+            className={`absolute bottom-2 right-2 sm:bottom-2.5 sm:right-2.5 w-6 h-6 sm:w-7 sm:h-7 rounded-full border text-white flex items-center justify-center shadow-lg transition-all z-20 cursor-pointer ${
               activeZoom ? 'bg-[#c87d4a] border-[#c87d4a]' : 'bg-black/70 hover:bg-black/90 border-white/20'
             }`}
             title="Toggle Zoom In/Out"
@@ -425,7 +425,7 @@ const VirtualTryOnStudio = () => {
           <button
             onClick={() => triggerLightXSynthesis(currentProduct, activePersonImage)}
             disabled={isLightXGenerating}
-            className="w-full py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-[#c87d4a] to-[#e09b67] text-white font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg shadow-[#c87d4a]/25 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full py-2 sm:py-2.5 px-3 sm:px-3.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-[#c87d4a] to-[#e09b67] text-white font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg shadow-[#c87d4a]/25 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span className="truncate">{isLightXGenerating ? 'Trying on outfit...' : `Try On ${currentProduct.name}`}</span>
@@ -434,7 +434,7 @@ const VirtualTryOnStudio = () => {
 
         {aiGeneratedImage && (
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className="flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm truncate">
+            <div className="flex-1 py-1.5 sm:py-2 px-2 sm:px-2.5 rounded-lg sm:rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm truncate">
               <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
               <span className="truncate">100% LightX AI Generated Fit</span>
             </div>
@@ -462,7 +462,7 @@ const VirtualTryOnStudio = () => {
                 <div 
                   key={prod.id} 
                   onClick={() => setProduct(prod)}
-                  className={`relative flex-shrink-0 w-10 h-12 sm:w-12 sm:h-14 rounded-lg sm:rounded-xl border overflow-hidden bg-[#18181c] group cursor-pointer transition-all ${
+                  className={`relative flex-shrink-0 w-10 h-12 sm:w-11 sm:h-13 rounded-lg sm:rounded-xl border overflow-hidden bg-[#18181c] group cursor-pointer transition-all ${
                     selectedProduct?.id === prod.id ? 'border-[#c87d4a] ring-2 ring-[#c87d4a]/50' : 'border-white/20 opacity-70 hover:opacity-100'
                   }`}
                 >
@@ -487,7 +487,7 @@ const VirtualTryOnStudio = () => {
         <div className="pt-0.5 sm:pt-1">
           <button
             onClick={handleAddAllToCart}
-            className="w-full flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-[#c87d4a] hover:bg-[#d28a57] text-white text-[11px] sm:text-xs font-bold tracking-wide shadow-lg shadow-[#c87d4a]/20 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+            className="w-full flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-3 sm:px-3.5 rounded-lg sm:rounded-xl bg-[#c87d4a] hover:bg-[#d28a57] text-white text-[11px] sm:text-xs font-bold tracking-wide shadow-lg shadow-[#c87d4a]/20 transition-all transform hover:-translate-y-0.5 cursor-pointer"
           >
             <ShoppingBag className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             <span>Add to bag</span>
