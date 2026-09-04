@@ -4,6 +4,7 @@ import DataTable from '../../Components/Admin/DataTable';
 import SearchFilter from '../../Components/Admin/SearchFilter';
 import ConfirmModal from '../../Components/Admin/ConfirmModal';
 import { adminApi } from '../../services/adminApi';
+import { API_URL } from '../../config/api';
 import toast from 'react-hot-toast';
 
 export const AdminVirtualTryOn = () => {
@@ -64,7 +65,7 @@ export const AdminVirtualTryOn = () => {
   const handleRetry = async (log) => {
     toast.loading('Retrying AI Virtual Try-On generation...', { id: 'retry-tryon' });
     try {
-      const res = await fetch('/api/tryon', {
+      const res = await fetch(`${API_URL}/tryon`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,20 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Breadcrumbs from '../Components/Breadcrumbs';
 import { TRY_ON_MODELS } from '../data/products';
 import { useProductStore } from '../store/useProductStore';
 import { useCartStore } from '../store/useCartStore';
+import { useTryOnStore } from '../store/useTryOnStore';
 import { runLightXVirtualTryOn, getCachedTryOnResult } from '../services/lightxService';
-import { Sparkles, Check, ShoppingBag, Wand2, Loader2, RotateCcw, AlertTriangle, Eye } from 'lucide-react';
+import CameraCaptureModal from '../Components/CameraCaptureModal';
+import ModelSelectionModal from '../Components/ModelSelectionModal';
+import { Sparkles, Check, ShoppingBag, Wand2, Loader2, RotateCcw, AlertTriangle, Eye, Camera, User, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const VirtualTryOnPage = () => {
   const addItem = useCartStore((state) => state.addItem);
   const { products } = useProductStore();
+  const {
+    selectedModelId,
+    setModel,
+    customUserPhoto,
+    setCustomUserPhoto,
+    photoSource,
+  } = useTryOnStore();
 
-  const [selectedModel, setSelectedModel] = useState(TRY_ON_MODELS[0]);
   const [selectedProduct, setSelectedProduct] = useState(products[0] || null);
   const [selectedSize, setSelectedSize] = useState('M');
   const [selectedColor, setSelectedColor] = useState({ name: 'Standard', hex: '#000000' });
+
+  // Modals for photo & model selection
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [isModelModalOpen, setIsModelModalOpen] = useState(false);
+  const fileInputRef = useRef(null);
 
   // AI Generation States
   const [isGenerating, setIsGenerating] = useState(false);
@@ -23,6 +37,16 @@ const VirtualTryOnPage = () => {
   const [showOriginal, setShowOriginal] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [showCreditsWarning, setShowCreditsWarning] = useState(false);
+
+  // Active Model
+  const currentModel = (TRY_ON_MODELS && TRY_ON_MODELS.find((m) => m.id === selectedModelId)) || TRY_ON_MODELS[0] || {
+    id: 'm-arjun',
+    name: 'Arjun Sharma',
+    fullBody: '/assets/images/tryon/arjun-model.jpg',
+    avatar: '/assets/images/tryon/arjun-model.jpg',
+  };
+
+  const activePersonImage = customUserPhoto || currentModel.fullBody || currentModel.avatar || '/assets/images/tryon/arjun-model.jpg';
 
   // Sync initial product selection
   useEffect(() => {
@@ -33,20 +57,25 @@ const VirtualTryOnPage = () => {
     }
   }, [products]);
 
-  // When model changes, check cache
+  // When active person or product changes, check cache
+  useEffect(() => {
+    if (selectedProduct) {
+      const cached = getCachedTryOnResult(activePersonImage, selectedProduct.id || selectedProduct.name);
+      setAiResultImage(cached || null);
+      setErrorMessage(null);
+      setShowCreditsWarning(false);
+    }
+  }, [activePersonImage, selectedProduct]);
+
+  // When model changes
   const handleModelChange = (model) => {
-    setSelectedModel(model);
+    setModel(model);
     setShowOriginal(false);
     setErrorMessage(null);
     setShowCreditsWarning(false);
-    if (selectedProduct) {
-      const personUrl = model.fullBody || model.avatar;
-      const cached = getCachedTryOnResult(personUrl, selectedProduct.id || selectedProduct.name);
-      setAiResultImage(cached || null);
-    }
   };
 
-  // When product changes, check cache
+  // When product changes
   const handleProductChange = (prod) => {
     setSelectedProduct(prod);
     setSelectedSize(prod.sizes?.[0] || 'M');
@@ -54,23 +83,46 @@ const VirtualTryOnPage = () => {
     setShowOriginal(false);
     setErrorMessage(null);
     setShowCreditsWarning(false);
+  };
 
-    if (selectedModel) {
-      const personUrl = selectedModel.fullBody || selectedModel.avatar;
-      const cached = getCachedTryOnResult(personUrl, prod.id || prod.name);
-      setAiResultImage(cached || null);
+  // User photo upload from gallery / device
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 15 * 1024 * 1024) {
+        toast.error('Image size must be less than 15MB');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        const photoUrl = uploadEvent.target.result;
+        setCustomUserPhoto(photoUrl, 'gallery');
+        setAiResultImage(null);
+        setErrorMessage(null);
+        toast.success('Your photo loaded! Ready for AI Try-On ✨');
+      };
+      reader.readAsDataURL(file);
     }
+    e.target.value = '';
+  };
+
+  // User photo selected via Camera modal
+  const handlePhotoSelected = (photoDataUrl) => {
+    setCustomUserPhoto(photoDataUrl, 'camera');
+    setAiResultImage(null);
+    setErrorMessage(null);
+    toast.success('Your photo loaded! Ready for AI Try-On ✨');
   };
 
   // Trigger Real LightX AI Virtual Try-On
   const handleTryOn = async () => {
-    if (!selectedProduct || !selectedModel) {
-      toast.error('Please select both a model and a product.');
+    if (!selectedProduct) {
+      toast.error('Please select a product.');
       return;
     }
     if (isGenerating) return;
 
-    const personUrl = selectedModel.fullBody || selectedModel.avatar;
+    const personUrl = activePersonImage;
 
     // 1. Check Cache
     const cached = getCachedTryOnResult(personUrl, selectedProduct.id || selectedProduct.name);
@@ -99,7 +151,8 @@ const VirtualTryOnPage = () => {
 
       if (res?.outputUrl) {
         setAiResultImage(res.outputUrl);
-        toast.success('✨ Real AI Try-On generated successfully!');
+        setErrorMessage(null);
+        toast.success(customUserPhoto ? '✨ Outfit fitted to your photo!' : '✨ Real AI Try-On generated successfully!');
       } else {
         throw new Error('No output URL received from AI.');
       }
@@ -183,25 +236,48 @@ const VirtualTryOnPage = () => {
     }
   };
 
-  const currentModel = selectedModel || TRY_ON_MODELS[0] || {
-    id: 'm-arjun',
-    name: 'Arjun Sharma',
-    fullBody: '/assets/images/tryon/arjun-model.jpg',
-    avatar: '/assets/images/tryon/arjun-model.jpg',
-  };
-
-  const activeDisplayImage = (aiResultImage && !showOriginal) ? aiResultImage : (currentModel.fullBody || currentModel.avatar);
+  const activeDisplayImage = (aiResultImage && !showOriginal) ? aiResultImage : activePersonImage;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       <Breadcrumbs items={[{ label: 'Virtual Fitting Room Studio' }]} />
+
+      {/* Hidden File Input for Gallery Photo Upload */}
+      <input 
+        ref={fileInputRef} 
+        type="file" 
+        accept="image/*" 
+        className="hidden" 
+        onChange={handlePhotoUpload} 
+      />
+
+      {/* Choice & Camera Capture Modal */}
+      <CameraCaptureModal
+        isOpen={isPhotoModalOpen}
+        onClose={() => setIsPhotoModalOpen(false)}
+        onPhotoSelected={handlePhotoSelected}
+        onOpenGallery={() => fileInputRef.current?.click()}
+      />
+
+      {/* Choose a Model Modal (6 Indian Models) */}
+      <ModelSelectionModal
+        isOpen={isModelModalOpen}
+        onClose={() => setIsModelModalOpen(false)}
+        selectedModelId={selectedModelId}
+        onSelectModel={(model) => {
+          setModel(model);
+          setAiResultImage(null);
+          setErrorMessage(null);
+          toast.success(`Selected model: ${model.name}`);
+        }}
+      />
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-6">
         <div>
           <span className="text-xs font-mono uppercase tracking-widest text-[#c87d4a]">AI GENERATIVE STUDIO</span>
           <h1 className="text-3xl font-serif font-bold text-white mt-1">Interactive Virtual Try-On</h1>
           <p className="text-xs text-white/50 font-light mt-0.5">
-            Select any garment to wear immediately on the model, or generate photorealistic AI fusion.
+            Select any garment to wear immediately on your photo or model with LightX AI synthesis.
           </p>
         </div>
 
@@ -236,6 +312,12 @@ const VirtualTryOnPage = () => {
             <img
               src={activeDisplayImage}
               alt={currentModel.name}
+              onError={() => {
+                if (aiResultImage) {
+                  setAiResultImage(null);
+                  setErrorMessage('Failed to load generated AI image preview.');
+                }
+              }}
               className="w-full h-full object-contain filter brightness-95 transition-all duration-500"
             />
 
@@ -260,7 +342,7 @@ const VirtualTryOnPage = () => {
                 </div>
                 <div className="space-y-1.5 w-full max-w-[220px]">
                   <p className="text-sm font-bold text-white">Generating your try-on...</p>
-                  <p className="text-[11px] text-white/50">LightX AI is fitting the garment to the mannequin</p>
+                  <p className="text-[11px] text-white/50">LightX AI is synthesizing natural garment fit</p>
                   
                   {/* Progress Bar */}
                   <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden mt-3">
@@ -290,14 +372,14 @@ const VirtualTryOnPage = () => {
             <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-md border border-white/10 rounded-2xl p-3 text-xs text-white/90 flex items-center justify-between">
               <div>
                 <p className="font-bold text-white flex items-center gap-1.5">
-                  {currentModel.name}
+                  {customUserPhoto ? (photoSource === 'camera' ? '📷 Live Camera Photo' : '📸 Your Uploaded Photo') : currentModel.name}
                   {aiResultImage && !showOriginal && (
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
                       AI Generated
                     </span>
                   )}
                 </p>
-                <p className="text-[10px] text-white/50">{currentModel.height} • Wearing Size {selectedSize}</p>
+                <p className="text-[10px] text-white/50">{customUserPhoto ? 'Custom Fit' : `${currentModel.height} • Wearing Size ${selectedSize}`}</p>
               </div>
               <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-xs">
                 <Check className="w-4 h-4" />
@@ -320,33 +402,66 @@ const VirtualTryOnPage = () => {
               </div>
             )}
 
-            {/* 1. Avatar Models Grid */}
+            {/* 1. Photo Source Selection Bar */}
             <div className="space-y-3">
-              <label className="text-xs font-bold text-white/60 uppercase tracking-wider block">1. Select Dummy Person / Mannequin</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
-                {TRY_ON_MODELS.map((model) => (
-                  <button
-                    key={model.id}
-                    type="button"
-                    disabled={isGenerating}
-                    onClick={() => handleModelChange(model)}
-                    className={`flex items-center gap-2.5 p-2.5 sm:p-3 rounded-2xl border text-left transition-all cursor-pointer disabled:opacity-50 ${
-                      currentModel.id === model.id
-                        ? 'bg-[#c87d4a]/20 border-[#c87d4a] text-white font-bold ring-1 ring-[#c87d4a]'
-                        : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'
-                    }`}
-                  >
-                    <img src={model.avatar} alt={model.name} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border border-white/20 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-white truncate">{model.name}</p>
-                      <p className="text-[10px] text-white/40 truncate">{model.height}</p>
-                    </div>
-                  </button>
-                ))}
+              <label className="text-xs font-bold text-white/60 uppercase tracking-wider block">1. Choose Person / Model Source</label>
+              <div className="flex flex-wrap sm:flex-nowrap gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsPhotoModalOpen(true)}
+                  className={`flex-1 p-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    customUserPhoto
+                      ? 'bg-[#c87d4a]/20 border-[#c87d4a] text-[#c87d4a]'
+                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/80'
+                  }`}
+                >
+                  <Camera className="w-4 h-4 text-[#c87d4a]" />
+                  <span>{customUserPhoto ? 'Change Photo (Camera/Gallery)' : 'Upload / Camera Photo'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsModelModalOpen(true)}
+                  className={`flex-1 p-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    !customUserPhoto
+                      ? 'bg-[#c87d4a]/20 border-[#c87d4a] text-[#c87d4a]'
+                      : 'bg-white/5 hover:bg-white/10 border-white/10 text-white/80'
+                  }`}
+                >
+                  <User className="w-4 h-4 text-[#c87d4a]" />
+                  <span>{customUserPhoto ? 'Choose a Ready Model' : `👤 ${currentModel.name}`}</span>
+                </button>
               </div>
             </div>
 
-            {/* 2. Select Clothing Garment */}
+            {/* 2. Avatar Models Quick Selector */}
+            {!customUserPhoto && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                  {TRY_ON_MODELS.map((model) => (
+                    <button
+                      key={model.id}
+                      type="button"
+                      disabled={isGenerating}
+                      onClick={() => handleModelChange(model)}
+                      className={`flex items-center gap-2.5 p-2.5 sm:p-3 rounded-2xl border text-left transition-all cursor-pointer disabled:opacity-50 ${
+                        currentModel.id === model.id
+                          ? 'bg-[#c87d4a]/20 border-[#c87d4a] text-white font-bold ring-1 ring-[#c87d4a]'
+                          : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'
+                      }`}
+                    >
+                      <img src={model.avatar} alt={model.name} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border border-white/20 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-white truncate">{model.name}</p>
+                        <p className="text-[10px] text-white/40 truncate">{model.height}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 3. Select Clothing Garment */}
             <div className="space-y-3">
               <label className="text-xs font-bold text-white/60 uppercase tracking-wider block">2. Select Clothing Garment</label>
               <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-thin">
@@ -366,7 +481,7 @@ const VirtualTryOnPage = () => {
               </div>
             </div>
 
-            {/* 3. Size Selector */}
+            {/* 4. Size Selector */}
             {selectedProduct?.sizes?.length > 0 && (
               <div className="space-y-3">
                 <label className="text-xs font-bold text-white/60 uppercase tracking-wider block">3. Select Garment Size</label>
@@ -390,7 +505,7 @@ const VirtualTryOnPage = () => {
               </div>
             )}
 
-            {/* 4. Action: TRY ON with LightX AI */}
+            {/* 5. Action: TRY ON with LightX AI */}
             <div className="pt-2">
               <button
                 type="button"

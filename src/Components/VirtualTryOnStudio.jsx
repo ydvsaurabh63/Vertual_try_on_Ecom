@@ -14,19 +14,23 @@ const VirtualTryOnStudio = () => {
     isOpen, 
     closeTryOn, 
     selectedProduct, 
-    setProduct, 
+    setProduct,
+    selectedModelId,
+    setModel,
+    customUserPhoto,
+    setCustomUserPhoto,
+    photoSource,
   } = useTryOnStore();
 
   const addItem = useCartStore((state) => state.addItem);
 
   const [pickedItems, setPickedItems] = useState([]);
 
-  // Try-On Engine & Model States
-  const [selectedModelId, setSelectedModelId] = useState('m-arjun');
+  // Try-On Engine States
   const [isLightXGenerating, setIsLightXGenerating] = useState(false);
   const [lightXProgress, setLightXProgress] = useState(0);
   const [aiGeneratedImage, setAiGeneratedImage] = useState(null);
-  const [customUserPhoto, setCustomUserPhoto] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
   const [fitInsights, setFitInsights] = useState(null);
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [isModelModalOpen, setIsModelModalOpen] = useState(false);
@@ -53,19 +57,19 @@ const VirtualTryOnStudio = () => {
     localStorage.removeItem('lightx_tryon_cache');
   }, []);
 
-
   // Trigger LightX 100% Real Generative AI Virtual Try-On
   // The API key is stored securely in server/.env — never exposed to the browser.
   const triggerLightXSynthesis = async (product, personImage) => {
     if (!product) return;
     if (isLightXGenerating) return; // Prevent duplicate requests
 
-    const targetPerson = personImage || customUserPhoto || activeModel.fullBody || '/assets/images/tryon/model-man.jpg';
+    const targetPerson = personImage || customUserPhoto || activeModel.fullBody || '/assets/images/tryon/arjun-model.jpg';
 
     // Check if result is already cached for this product to avoid redundant API calls
     const cached = getCachedTryOnResult(targetPerson, product.id || product.name);
     if (cached) {
       setAiGeneratedImage(cached);
+      setErrorMessage(null);
       toast.success('Loaded try-on preview from cache!');
       return;
     }
@@ -73,6 +77,7 @@ const VirtualTryOnStudio = () => {
     try {
       setIsLightXGenerating(true);
       setLightXProgress(10);
+      setErrorMessage(null);
 
       // Backend receives model image URL + product cloth image URL,
       // calls LightX v2/aivirtualtryon with the server-side API key,
@@ -85,11 +90,14 @@ const VirtualTryOnStudio = () => {
 
       if (result.outputUrl) {
         setAiGeneratedImage(result.outputUrl);
+        setErrorMessage(null);
         toast.success(customUserPhoto ? 'Outfit successfully fitted on your photo!' : 'Try-On generated successfully with LightX AI!');
       }
     } catch (err) {
       console.error('LightX Virtual Try-On Error:', err);
-      toast.error(err.message || 'Virtual Try-On failed. Ensure the backend server is running.');
+      const msg = err.message || 'Virtual Try-On failed. Ensure the backend server is running.';
+      setErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setIsLightXGenerating(false);
     }
@@ -104,7 +112,7 @@ const VirtualTryOnStudio = () => {
         return exists ? prev : [...prev, selectedProduct];
       });
 
-      const targetPerson = customUserPhoto || activeModel.fullBody || '/assets/images/tryon/model-man.jpg';
+      const targetPerson = customUserPhoto || activeModel.fullBody || '/assets/images/tryon/arjun-model.jpg';
 
       // Check if this product was already generated and cached
       const cached = getCachedTryOnResult(targetPerson, selectedProduct.id || selectedProduct.name);
@@ -113,13 +121,14 @@ const VirtualTryOnStudio = () => {
       } else {
         setAiGeneratedImage(null);
       }
+      setErrorMessage(null);
 
       // Optional background fit insights
       generateAiTryOnFitAnalysis(selectedProduct, '').then((res) => {
         setFitInsights(res);
       }).catch(() => {});
     }
-  }, [selectedProduct]);
+  }, [selectedProduct, customUserPhoto, selectedModelId]);
 
   const currentProduct = selectedProduct || (pickedItems.length > 0 ? pickedItems[pickedItems.length - 1] : null);
 
@@ -171,8 +180,9 @@ const VirtualTryOnStudio = () => {
       const reader = new FileReader();
       reader.onload = (uploadEvent) => {
         const photoUrl = uploadEvent.target.result;
-        setCustomUserPhoto(photoUrl);
+        setCustomUserPhoto(photoUrl, 'gallery');
         setAiGeneratedImage(null);
+        setErrorMessage(null);
         toast.success('Your photo loaded! Ready for AI Try-On ✨');
         if (currentProduct) {
           triggerLightXSynthesis(currentProduct, photoUrl);
@@ -185,8 +195,9 @@ const VirtualTryOnStudio = () => {
 
   // User photo selected via Camera modal (Capture or Gallery)
   const handlePhotoSelected = (photoDataUrl) => {
-    setCustomUserPhoto(photoDataUrl);
+    setCustomUserPhoto(photoDataUrl, 'camera');
     setAiGeneratedImage(null);
+    setErrorMessage(null);
     toast.success('Your photo loaded! Ready for AI Try-On ✨');
     if (currentProduct) {
       triggerLightXSynthesis(currentProduct, photoDataUrl);
@@ -240,39 +251,40 @@ const VirtualTryOnStudio = () => {
         onClose={() => setIsModelModalOpen(false)}
         selectedModelId={selectedModelId}
         onSelectModel={(model) => {
-          setSelectedModelId(model.id);
-          setCustomUserPhoto(null);
+          setModel(model);
           setAiGeneratedImage(null);
+          setErrorMessage(null);
           toast.success(`Selected model: ${model.name}`);
         }}
       />
 
-      {/* Floating Bottom-Left Widget Dock (100% Mobile Responsive Bottom Sheet / Dock) */}
-      <div className="fixed inset-x-3 bottom-3 sm:inset-x-auto sm:left-6 sm:bottom-6 z-50 w-auto sm:w-96 max-w-[calc(100vw-24px)] max-h-[88vh] overflow-y-auto bg-[#16161a] border border-white/10 rounded-3xl p-3.5 sm:p-4 shadow-2xl backdrop-blur-2xl flex flex-col space-y-2.5 sm:space-y-3 animate-slideUp text-white scrollbar-thin scrollbar-thumb-white/10">
+      {/* Floating Widget Dock (Top-Left on Mobile / Bottom-Left on Desktop) */}
+      <div className="fixed top-18 left-3 bottom-auto sm:top-auto sm:bottom-6 sm:left-6 z-50 w-[260px] xs:w-[280px] sm:w-96 max-w-[calc(100vw-24px)] max-h-[52vh] sm:max-h-[88vh] overflow-y-auto bg-[#16161a]/95 sm:bg-[#16161a] border border-white/15 sm:border-white/10 rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 shadow-2xl backdrop-blur-2xl flex flex-col space-y-2 sm:space-y-3 animate-slideDown sm:animate-slideUp text-white scrollbar-thin scrollbar-thumb-white/10">
         
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white tracking-wide">Fitting room</h2>
+          <h2 className="text-sm sm:text-lg font-bold text-white tracking-wide">Fitting room</h2>
 
           <div className="flex items-center gap-1">
             <button
               onClick={() => {
                 setPickedItems([]);
                 setAiGeneratedImage(null);
+                setErrorMessage(null);
                 setProduct(null);
                 toast('Fitting room cleared', { icon: '🧹' });
               }}
-              className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+              className="p-1 sm:p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
               title="Reset"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
             <button
               onClick={closeTryOn}
-              className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+              className="p-1 sm:p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
               title="Close fitting room"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
         </div>
@@ -284,7 +296,7 @@ const VirtualTryOnStudio = () => {
           onMouseMove={handleMouseMove}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-inner group cursor-crosshair select-none"
+          className="relative aspect-[3/4] w-full rounded-xl sm:rounded-2xl overflow-hidden bg-black/40 border border-white/10 shadow-inner group cursor-crosshair select-none"
         >
           {/* Zoomable Viewport */}
           <div 
@@ -300,43 +312,49 @@ const VirtualTryOnStudio = () => {
               alt="Person / Model"
               loading="lazy"
               src={aiGeneratedImage || activePersonImage}
+              onError={() => {
+                if (aiGeneratedImage) {
+                  setAiGeneratedImage(null);
+                  setErrorMessage('Failed to load generated try-on image preview.');
+                }
+              }}
               className="rounded-[inherit] object-contain w-full h-full filter contrast-105 brightness-100 transition-all duration-500"
             />
 
             {/* 2. Loading State while LightX API is processing */}
             {isLightXGenerating && (
-              <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center space-y-4 animate-fadeIn">
-                <div className="relative w-14 h-14">
-                  <div className="w-14 h-14 rounded-full border-3 border-[#c87d4a]/20 border-t-[#c87d4a] animate-spin" />
-                  <Wand2 className="w-6 h-6 text-[#c87d4a] absolute inset-0 m-auto animate-pulse" />
+              <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-30 flex flex-col items-center justify-center p-3 sm:p-6 text-center space-y-2 sm:space-y-4 animate-fadeIn">
+                <div className="relative w-10 h-10 sm:w-14 sm:h-14">
+                  <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 sm:border-3 border-[#c87d4a]/20 border-t-[#c87d4a] animate-spin" />
+                  <Wand2 className="w-4 h-4 sm:w-6 sm:h-6 text-[#c87d4a] absolute inset-0 m-auto animate-pulse" />
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-bold text-white tracking-wide">Trying on your outfit...</p>
-                  <p className="text-xs text-white/60">LightX AI synthesizing natural garment fit</p>
+                <div className="space-y-0.5 sm:space-y-1">
+                  <p className="text-xs sm:text-sm font-bold text-white tracking-wide">Trying on outfit...</p>
+                  <p className="text-[10px] sm:text-xs text-white/60">LightX AI synthesizing fit</p>
                 </div>
-                <div className="w-48 bg-white/10 h-2 rounded-full overflow-hidden">
+                <div className="w-32 sm:w-48 bg-white/10 h-1.5 sm:h-2 rounded-full overflow-hidden">
                   <div 
                     className="bg-gradient-to-r from-[#c87d4a] to-[#e09865] h-full transition-all duration-300 rounded-full" 
                     style={{ width: `${lightXProgress}%` }}
                   />
                 </div>
-                <span className="text-xs font-mono text-[#c87d4a] font-bold">{lightXProgress}%</span>
+                <span className="text-[10px] sm:text-xs font-mono text-[#c87d4a] font-bold">{lightXProgress}%</span>
               </div>
             )}
           </div>
 
           {/* Model Tag on Top Left */}
-          <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 text-[9px] text-white/80">
-            {customUserPhoto ? '📸 Your Photo' : `👤 ${activeModel.name}`}
+          <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-20 flex items-center gap-1 bg-black/70 backdrop-blur-md px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-white/10 text-[8px] sm:text-[9px] text-white/80">
+            {customUserPhoto ? (photoSource === 'camera' ? '📷 Camera' : '📸 Photo') : `👤 ${activeModel.name}`}
           </div>
 
           {/* Quick Upload / Camera Button on Canvas Top Right */}
           <button
             onClick={() => setIsPhotoModalOpen(true)}
-            className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 bg-black/75 hover:bg-black/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/20 hover:border-[#c87d4a] text-[10px] text-white/90 hover:text-[#c87d4a] transition-all cursor-pointer shadow-lg"
+            className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-20 flex items-center gap-1 bg-black/75 hover:bg-black/90 backdrop-blur-md px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-white/20 hover:border-[#c87d4a] text-[9px] sm:text-[10px] text-white/90 hover:text-[#c87d4a] transition-all cursor-pointer shadow-lg"
             title="Upload from gallery or take photo with camera"
           >
-            <Camera className="w-3 h-3 text-[#c87d4a]" />
+            <Camera className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#c87d4a]" />
             <span>{customUserPhoto ? 'Change' : 'Photo'}</span>
           </button>
 
@@ -346,41 +364,59 @@ const VirtualTryOnStudio = () => {
               e.stopPropagation();
               setIsManualZoom(!isManualZoom);
             }}
-            className={`absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full border text-white flex items-center justify-center shadow-lg transition-all z-20 cursor-pointer ${
+            className={`absolute bottom-2 right-2 sm:bottom-2.5 sm:right-2.5 w-6 h-6 sm:w-8 sm:h-8 rounded-full border text-white flex items-center justify-center shadow-lg transition-all z-20 cursor-pointer ${
               activeZoom ? 'bg-[#c87d4a] border-[#c87d4a]' : 'bg-black/70 hover:bg-black/90 border-white/20'
             }`}
             title="Toggle Zoom In/Out"
           >
-            <ZoomIn className="w-3.5 h-3.5" />
+            <ZoomIn className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
           </button>
         </div>
 
+        {/* Error Banner if API error occurs */}
+        {errorMessage && (
+          <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[10px] sm:text-[11px] flex items-start gap-1.5 sm:gap-2 animate-fadeIn">
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-white">
+                {errorMessage.includes('credit') || errorMessage.includes('Credit') || errorMessage.includes('402') || errorMessage.includes('5040')
+                  ? 'LightX API credits are currently exhausted.'
+                  : errorMessage}
+              </p>
+              {errorMessage.includes('credit') || errorMessage.includes('Credit') || errorMessage.includes('402') || errorMessage.includes('5040') ? (
+                <p className="text-[9px] sm:text-[10px] text-amber-200/80 mt-0.5">
+                  Please recharge credits at <a href="https://app.lightxeditor.com" target="_blank" rel="noreferrer" className="underline font-bold text-white">app.lightxeditor.com</a>.
+                </p>
+              ) : null}
+            </div>
+          </div>
+        )}
+
         {/* Change Your Photo & Choose a Model Action Bar */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Button 1: Change Your Photo */}
           <button
             onClick={() => setIsPhotoModalOpen(true)}
-            className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md ${
+            className={`flex-1 py-1.5 sm:py-2 px-2 sm:px-2.5 rounded-lg sm:rounded-xl border text-[10px] sm:text-xs font-semibold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer shadow-md ${
               customUserPhoto
                 ? 'bg-[#c87d4a]/20 border-[#c87d4a]/60 text-[#c87d4a] hover:bg-[#c87d4a]/30'
                 : 'bg-white/10 hover:bg-white/15 border-white/20 hover:border-[#c87d4a]/50 text-white'
             }`}
           >
-            <Camera className="w-3.5 h-3.5 text-[#c87d4a]" />
-            <span className="truncate">{customUserPhoto ? 'Change Photo' : 'Change Your Photo'}</span>
+            <Camera className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#c87d4a]" />
+            <span className="truncate">{customUserPhoto ? 'Change Photo' : 'Your Photo'}</span>
           </button>
 
           {/* Button 2: Choose a Model */}
           <button
             onClick={() => setIsModelModalOpen(true)}
-            className={`flex-1 py-2 px-2.5 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md ${
+            className={`flex-1 py-1.5 sm:py-2 px-2 sm:px-2.5 rounded-lg sm:rounded-xl border text-[10px] sm:text-xs font-semibold flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer shadow-md ${
               !customUserPhoto
                 ? 'bg-[#c87d4a]/20 border-[#c87d4a]/60 text-[#c87d4a] hover:bg-[#c87d4a]/30'
                 : 'bg-white/10 hover:bg-white/15 border-white/20 hover:border-[#c87d4a]/50 text-white'
             }`}
           >
-            <User className="w-3.5 h-3.5 text-[#c87d4a]" />
-            <span className="truncate">{customUserPhoto ? 'Choose a Model' : `👤 ${activeModel.name}`}</span>
+            <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#c87d4a]" />
+            <span className="truncate">{customUserPhoto ? 'Models' : activeModel.name}</span>
           </button>
         </div>
 
@@ -389,22 +425,22 @@ const VirtualTryOnStudio = () => {
           <button
             onClick={() => triggerLightXSynthesis(currentProduct, activePersonImage)}
             disabled={isLightXGenerating}
-            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#c87d4a] to-[#e09b67] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#c87d4a]/25 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-gradient-to-r from-[#c87d4a] to-[#e09b67] text-white font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg shadow-[#c87d4a]/25 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            <Sparkles className="w-4 h-4" />
-            <span>{isLightXGenerating ? 'Trying on your outfit...' : `Try On ${currentProduct.name}`}</span>
+            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="truncate">{isLightXGenerating ? 'Trying on outfit...' : `Try On ${currentProduct.name}`}</span>
           </button>
         )}
 
         {aiGeneratedImage && (
-          <div className="flex items-center gap-2">
-            <div className="flex-1 py-2 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
-              <Check className="w-4 h-4" />
-              <span>100% LightX AI Generated Fit</span>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex-1 py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 shadow-sm truncate">
+              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="truncate">100% LightX AI Generated Fit</span>
             </div>
             <button
               onClick={() => setAiGeneratedImage(null)}
-              className="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-white/70 hover:text-white text-xs font-medium transition-all"
+              className="py-1.5 sm:py-2 px-2.5 sm:px-3 rounded-lg sm:rounded-xl bg-white/10 hover:bg-white/15 text-white/70 hover:text-white text-[10px] sm:text-xs font-medium transition-all"
             >
               Reset
             </button>
@@ -412,21 +448,21 @@ const VirtualTryOnStudio = () => {
         )}
 
         {/* "Your picks" Tray */}
-        <div className="space-y-2 pt-1 border-t border-white/10">
-          <div className="flex items-center justify-between text-xs text-white/60">
+        <div className="space-y-1.5 sm:space-y-2 pt-1 border-t border-white/10">
+          <div className="flex items-center justify-between text-[11px] sm:text-xs text-white/60">
             <span className="font-bold text-white/80">Your picks</span>
-            <span className="text-[10px] text-white/40">{pickedItems.length} {pickedItems.length === 1 ? 'piece' : 'pieces'}</span>
+            <span className="text-[9px] sm:text-[10px] text-white/40">{pickedItems.length} {pickedItems.length === 1 ? 'piece' : 'pieces'}</span>
           </div>
 
           {pickedItems.length === 0 ? (
-            <p className="text-[10px] text-white/40 italic py-1">No clothes selected yet. Click the hanger on any product to wear!</p>
+            <p className="text-[9px] sm:text-[10px] text-white/40 italic py-0.5 sm:py-1">No clothes selected yet. Click hanger on any product to wear!</p>
           ) : (
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 scrollbar-none">
               {pickedItems.map((prod) => (
                 <div 
                   key={prod.id} 
                   onClick={() => setProduct(prod)}
-                  className={`relative flex-shrink-0 w-12 h-14 rounded-xl border overflow-hidden bg-[#18181c] group cursor-pointer transition-all ${
+                  className={`relative flex-shrink-0 w-10 h-12 sm:w-12 sm:h-14 rounded-lg sm:rounded-xl border overflow-hidden bg-[#18181c] group cursor-pointer transition-all ${
                     selectedProduct?.id === prod.id ? 'border-[#c87d4a] ring-2 ring-[#c87d4a]/50' : 'border-white/20 opacity-70 hover:opacity-100'
                   }`}
                 >
@@ -436,10 +472,10 @@ const VirtualTryOnStudio = () => {
                       e.stopPropagation();
                       handleRemovePick(prod.id);
                     }}
-                    className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/80 text-white hover:bg-rose-500 flex items-center justify-center transition-colors"
+                    className="absolute top-0.5 right-0.5 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-black/80 text-white hover:bg-rose-500 flex items-center justify-center transition-colors"
                     title="Remove pick"
                   >
-                    <X className="w-2.5 h-2.5" />
+                    <X className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
                   </button>
                 </div>
               ))}
@@ -448,12 +484,12 @@ const VirtualTryOnStudio = () => {
         </div>
 
         {/* Bottom Bar: Add to Bag */}
-        <div className="pt-1">
+        <div className="pt-0.5 sm:pt-1">
           <button
             onClick={handleAddAllToCart}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#c87d4a] hover:bg-[#d28a57] text-white text-xs font-bold tracking-wide shadow-lg shadow-[#c87d4a]/20 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+            className="w-full flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg sm:rounded-xl bg-[#c87d4a] hover:bg-[#d28a57] text-white text-[11px] sm:text-xs font-bold tracking-wide shadow-lg shadow-[#c87d4a]/20 transition-all transform hover:-translate-y-0.5 cursor-pointer"
           >
-            <ShoppingBag className="w-3.5 h-3.5" />
+            <ShoppingBag className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             <span>Add to bag</span>
           </button>
         </div>
