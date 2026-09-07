@@ -68,7 +68,7 @@
       "id": "cat-9",
       "name": "Jeans & Denim",
       "slug": "jeans-denim",
-      "image": "https://images.unsplash.com/photo-1542272604-780c96856592?auto=format&fit=crop&w=400&q=80",
+      "image": "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=400&q=80",
       "status": "active",
       "createdAt": "2026-01-10T00:00:00.000Z"
     },
@@ -142,7 +142,8 @@
       "gender": "men",
       "description": "High-density organic cotton twill featuring double front pleats and relaxed tapered leg.",
       "images": [
-        "/assets/images/cutouts/trousers-2.png"
+        "/assets/images/cutouts/trousers-1.png",
+        "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=800&q=80"
       ],
       "sizes": [
         "28",
@@ -692,7 +693,8 @@
       "gender": "men",
       "description": "Classic 90s-inspired straight leg jeans made from 13oz ring-spun cotton with authentic vintage fade and whiskering.",
       "images": [
-        "https://images.unsplash.com/photo-1542272604-780c96856592?auto=format&fit=crop&w=800&q=80"
+        "/assets/images/cutouts/trousers-1.png",
+        "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=800&q=80"
       ],
       "sizes": [
         "30",

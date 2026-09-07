@@ -256,7 +256,7 @@ async function resolvePublicUrl(imageUrl, isGarment = false) {
 
 // ─── LightX Order Status Poller ──────────────────────────────────────────────
 
-async function pollOrderStatus(orderId, maxAttempts = 30, intervalMs = 3000) {
+async function pollOrderStatus(orderId, maxAttempts = 50, intervalMs = 1500) {
   const statusUrl = 'https://api.lightxeditor.com/external/api/v2/order-status';
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {

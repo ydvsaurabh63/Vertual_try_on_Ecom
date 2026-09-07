@@ -3,7 +3,7 @@ import { X, Sparkles, RotateCcw, ZoomIn, ShoppingBag, Cpu, Wand2, Check, Server,
 import { useTryOnStore } from '../store/useTryOnStore';
 import { useCartStore } from '../store/useCartStore';
 import { generateAiTryOnFitAnalysis } from '../services/geminiService';
-import { runLightXVirtualTryOn, getCachedTryOnResult } from '../services/lightxService';
+import { runLightXVirtualTryOn, getCachedTryOnResult, prefetchTryOn, isTryOnPrefetching } from '../services/lightxService';
 import { TRY_ON_MODELS } from '../data/products';
 import CameraCaptureModal from './CameraCaptureModal';
 import ModelSelectionModal from './ModelSelectionModal';
@@ -52,11 +52,6 @@ const VirtualTryOnStudio = () => {
   };
   const activePersonImage = customUserPhoto || activeModel?.fullBody || '/assets/images/tryon/arjun-model.jpg';
 
-  useEffect(() => {
-    // Clear stale try-on cache on mount so old results don't linger
-    localStorage.removeItem('lightx_tryon_cache');
-  }, []);
-
   // Trigger LightX 100% Real Generative AI Virtual Try-On
   // The API key is stored securely in server/.env — never exposed to the browser.
   const triggerLightXSynthesis = async (product, personImage) => {
@@ -76,12 +71,12 @@ const VirtualTryOnStudio = () => {
 
     try {
       setIsLightXGenerating(true);
-      setLightXProgress(10);
+      setLightXProgress(15);
       setErrorMessage(null);
 
       // Backend receives model image URL + product cloth image URL,
       // calls LightX v2/aivirtualtryon with the server-side API key,
-      // polls until done, and returns the AI-generated output URL.
+      // connects to background pre-fetch if already in flight, and returns output.
       const result = await runLightXVirtualTryOn({
         personImageUrl: targetPerson,
         product: product,
@@ -96,14 +91,27 @@ const VirtualTryOnStudio = () => {
     } catch (err) {
       console.error('LightX Virtual Try-On Error:', err);
       const msg = err.message || 'Virtual Try-On failed. Ensure the backend server is running.';
-      setErrorMessage(msg);
-      toast.error(msg);
+      const isCreditErr = msg.toLowerCase().includes('credit') || msg.includes('402') || msg.includes('5040');
+      if (isCreditErr) {
+        toast.error('LightX API credits are currently exhausted. Please recharge credits.', {
+          id: 'lightx-credit-toast',
+          duration: 4000,
+          style: {
+            background: '#18181c',
+            color: '#fbbf24',
+            border: '1px solid rgba(251, 191, 36, 0.3)',
+          },
+        });
+      } else {
+        setErrorMessage(msg);
+        toast.error(msg);
+      }
     } finally {
       setIsLightXGenerating(false);
     }
   };
 
-  // When a product is selected → check cache first, DO NOT auto-trigger to save API credits
+  // When a product is selected → check cache first, trigger background prefetch
   useEffect(() => {
     if (selectedProduct) {
       // Add to picked history list
@@ -120,6 +128,8 @@ const VirtualTryOnStudio = () => {
         setAiGeneratedImage(cached);
       } else {
         setAiGeneratedImage(null);
+        // ⚡ Start Background Pre-fetch immediately so it's ready when user clicks Try On
+        prefetchTryOn({ personImageUrl: targetPerson, product: selectedProduct });
       }
       setErrorMessage(null);
 
@@ -373,20 +383,11 @@ const VirtualTryOnStudio = () => {
           </button>
         </div>
 
-        {/* Error Banner if API error occurs */}
-        {errorMessage && (
-          <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[10px] sm:text-[11px] flex items-start gap-1.5 sm:gap-2 animate-fadeIn">
+        {/* Error Banner if non-credit API error occurs */}
+        {errorMessage && !errorMessage.toLowerCase().includes('credit') && !errorMessage.includes('402') && !errorMessage.includes('5040') && (
+          <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-red-500/15 border border-red-500/40 text-red-300 text-[10px] sm:text-[11px] flex items-start gap-1.5 sm:gap-2 animate-fadeIn">
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-white">
-                {errorMessage.includes('credit') || errorMessage.includes('Credit') || errorMessage.includes('402') || errorMessage.includes('5040')
-                  ? 'LightX API credits are currently exhausted.'
-                  : errorMessage}
-              </p>
-              {errorMessage.includes('credit') || errorMessage.includes('Credit') || errorMessage.includes('402') || errorMessage.includes('5040') ? (
-                <p className="text-[9px] sm:text-[10px] text-amber-200/80 mt-0.5">
-                  Please recharge credits at <a href="https://app.lightxeditor.com" target="_blank" rel="noreferrer" className="underline font-bold text-white">app.lightxeditor.com</a>.
-                </p>
-              ) : null}
+              <p className="font-semibold text-white">{errorMessage}</p>
             </div>
           </div>
         )}

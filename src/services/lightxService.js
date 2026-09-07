@@ -43,6 +43,20 @@ export const getCachedTryOnResult = (personUrl, garmentId) => {
   return cache[cacheKey] || null;
 };
 
+// ─── In-flight Request Registry ───────────────────────────────────────────
+// Shared map of active background generation promises to avoid duplicate API calls
+// and allow instant hook-in when the user clicks 'Try On'.
+const inFlightRequests = new Map();
+const inFlightListeners = new Map();
+
+/**
+ * Returns true if a background pre-fetch or generation is currently in flight.
+ */
+export const isTryOnPrefetching = (personImageUrl, garmentId) => {
+  const cacheKey = `${personImageUrl}_${garmentId}`;
+  return inFlightRequests.has(cacheKey);
+};
+
 // ─── Backend API Call ────────────────────────────────────────────────────────
 
 /**
@@ -83,11 +97,48 @@ const callBackendTryOn = async (modelImageUrl, clothImageUrl) => {
   return data.outputUrl;
 };
 
-// ─── Public API (matches original signatures) ────────────────────────────────
+// ─── Background Pre-fetcher ──────────────────────────────────────────────────
+
+/**
+ * Starts background AI generation as soon as a cloth is hung/selected.
+ * If already cached or currently processing, does not send duplicate requests.
+ *
+ * @param {object} params
+ * @param {string} params.personImageUrl
+ * @param {object} params.product
+ * @returns {Promise<string|null>}
+ */
+export const prefetchTryOn = async ({ personImageUrl, product }) => {
+  if (!personImageUrl || !product) return null;
+  const garmentId = product?.id || product?.name;
+  const cacheKey = `${personImageUrl}_${garmentId}`;
+
+  // 1. If already in cache, do nothing
+  if (getCachedTryOnResult(personImageUrl, garmentId)) {
+    return getCachedTryOnResult(personImageUrl, garmentId);
+  }
+
+  // 2. If already processing in background, return active promise
+  if (inFlightRequests.has(cacheKey)) {
+    return inFlightRequests.get(cacheKey);
+  }
+
+  // 3. Kick off background task
+  console.log(`[LightX Pre-Fetch] ⚡ Initiating background pre-fetch for: ${product.name}`);
+  const promise = runLightXVirtualTryOn({ personImageUrl, product }).catch((err) => {
+    console.debug('[LightX Pre-Fetch] Background pre-fetch notice:', err.message);
+    return null;
+  });
+
+  return promise;
+};
+
+// ─── Public API ──────────────────────────────────────────────────────────────
 
 /**
  * Full end-to-end Virtual Try-On runner.
- * Checks cache first, then calls the backend if needed.
+ * Checks cache first, connects to active in-flight pre-fetch if running,
+ * or calls backend if needed.
  *
  * @param {object} params
  * @param {string}   params.personImageUrl  - Model/dummy image URL or local path
@@ -101,21 +152,31 @@ export const runLightXVirtualTryOn = async ({
   onProgress,
 }) => {
   const garmentId = product?.id || product?.name;
+  const cacheKey = `${personImageUrl}_${garmentId}`;
 
-  // 1. Check in-memory / localStorage cache to avoid redundant API calls
+  // 1. Check in-memory / localStorage cache (instant 0s return!)
   const cachedUrl = getCachedTryOnResult(personImageUrl, garmentId);
   if (cachedUrl) {
+    if (onProgress) onProgress({ progress: 100 });
     return { success: true, outputUrl: cachedUrl, fromCache: true };
   }
 
-  // 2. Emit an initial progress ping
+  // 2. If already in flight from pre-fetch, hook into the existing promise
+  if (inFlightRequests.has(cacheKey)) {
+    console.log(`[LightX] ⚡ Attaching to existing in-flight background generation for: ${product?.name}`);
+    if (onProgress) {
+      if (!inFlightListeners.has(cacheKey)) {
+        inFlightListeners.set(cacheKey, new Set());
+      }
+      inFlightListeners.get(cacheKey).add(onProgress);
+    }
+    const result = await inFlightRequests.get(cacheKey);
+    return result;
+  }
+
+  // 3. Emit an initial progress ping
   if (onProgress) onProgress({ progress: 15 });
 
-  // Garment image priority for LightX AI:
-  // 1. realDressedModel  — public Unsplash URL of garment worn on a real model  ✅ (best for LightX)
-  // 2. images[0]         — local transparent PNG cutout                         ⚠️ (LightX rejects transparent PNGs)
-  // LightX AI extracts the clothing style from the reference image regardless of whether
-  // it's a cutout or a model photo — using a real photo gives best results.
   const clothImageUrl =
     product?.realDressedModel ||   // public Unsplash URL — preferred
     product?.images?.[0] ||        // local cutout fallback
@@ -125,48 +186,56 @@ export const runLightXVirtualTryOn = async ({
     throw new Error('No product image found. Cannot perform Virtual Try-On.');
   }
 
-  // 3. Simulate incremental progress while waiting for the backend
+  // 4. Create generation promise and store in inFlightRequests
   let progressValue = 20;
-  const progressInterval = setInterval(() => {
-    progressValue = Math.min(progressValue + 5, 90);
-    if (onProgress) onProgress({ progress: progressValue });
-  }, 3000);
-
-  try {
-    // 4. Call the backend — it handles the LightX API key and polling internally
-    const outputUrl = await callBackendTryOn(personImageUrl, clothImageUrl);
-
-    // 5. Cache the result
-    if (garmentId) {
-      setCache(`${personImageUrl}_${garmentId}`, outputUrl);
+  const notifyListeners = (p) => {
+    if (onProgress) onProgress({ progress: p });
+    const listeners = inFlightListeners.get(cacheKey);
+    if (listeners) {
+      listeners.forEach((fn) => {
+        try { fn({ progress: p }); } catch {}
+      });
     }
+  };
 
-    if (onProgress) onProgress({ progress: 100 });
+  const progressInterval = setInterval(() => {
+    progressValue = Math.min(progressValue + 5, 92);
+    notifyListeners(progressValue);
+  }, 1500);
 
-    return { success: true, outputUrl };
-  } finally {
-    clearInterval(progressInterval);
-  }
+  const generationPromise = (async () => {
+    try {
+      const outputUrl = await callBackendTryOn(personImageUrl, clothImageUrl);
+
+      // Cache result persistently
+      if (garmentId) {
+        setCache(cacheKey, outputUrl);
+      }
+
+      notifyListeners(100);
+      return { success: true, outputUrl };
+    } finally {
+      clearInterval(progressInterval);
+      inFlightRequests.delete(cacheKey);
+      inFlightListeners.delete(cacheKey);
+    }
+  })();
+
+  inFlightRequests.set(cacheKey, generationPromise);
+  return generationPromise;
 };
 
 /**
  * @deprecated — Kept for API compatibility. Use runLightXVirtualTryOn instead.
- * Creates a try-on job (now handled entirely by the backend).
  */
 export const createLightXTryOnJob = async ({ personImageUrl, product }) => {
-  const cachedUrl = getCachedTryOnResult(personImageUrl, product?.id || product?.name);
-  if (cachedUrl) {
-    return { status: 'active', outputUrl: cachedUrl, fromCache: true };
-  }
-  // Delegate to the full runner
   return runLightXVirtualTryOn({ personImageUrl, product });
 };
 
 /**
- * @deprecated — Polling is now handled server-side. Kept for API compatibility.
+ * @deprecated — Kept for API compatibility.
  */
 export const pollLightXOrderStatus = async ({ orderId }) => {
-  // Polling is now fully server-side; this is a no-op stub.
   console.warn('[lightxService] pollLightXOrderStatus is deprecated — polling is handled server-side.');
   throw new Error('Direct polling is no longer supported. Use runLightXVirtualTryOn.');
 };

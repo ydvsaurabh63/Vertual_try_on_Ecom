@@ -4,7 +4,7 @@ import { TRY_ON_MODELS } from '../data/products';
 import { useProductStore } from '../store/useProductStore';
 import { useCartStore } from '../store/useCartStore';
 import { useTryOnStore } from '../store/useTryOnStore';
-import { runLightXVirtualTryOn, getCachedTryOnResult } from '../services/lightxService';
+import { runLightXVirtualTryOn, getCachedTryOnResult, prefetchTryOn } from '../services/lightxService';
 import CameraCaptureModal from '../Components/CameraCaptureModal';
 import ModelSelectionModal from '../Components/ModelSelectionModal';
 import { Sparkles, Check, ShoppingBag, Wand2, Loader2, RotateCcw, AlertTriangle, Eye, Camera, User, RefreshCw } from 'lucide-react';
@@ -57,11 +57,17 @@ const VirtualTryOnPage = () => {
     }
   }, [products]);
 
-  // When active person or product changes, check cache
+  // When active person or product changes, check cache & trigger background prefetch
   useEffect(() => {
     if (selectedProduct) {
       const cached = getCachedTryOnResult(activePersonImage, selectedProduct.id || selectedProduct.name);
-      setAiResultImage(cached || null);
+      if (cached) {
+        setAiResultImage(cached);
+      } else {
+        setAiResultImage(null);
+        // ⚡ Background prefetch
+        prefetchTryOn({ personImageUrl: activePersonImage, product: selectedProduct });
+      }
       setErrorMessage(null);
       setShowCreditsWarning(false);
     }
@@ -159,12 +165,21 @@ const VirtualTryOnPage = () => {
     } catch (err) {
       console.error('Virtual Try-On Error:', err);
       const msg = err.message || 'Virtual Try-On generation failed.';
-      setErrorMessage(msg);
-
-      if (msg.includes('credits') || msg.includes('Credits') || msg.includes('402') || msg.includes('5040')) {
-        setShowCreditsWarning(true);
+      const isCreditErr = msg.toLowerCase().includes('credit') || msg.includes('402') || msg.includes('5040');
+      if (isCreditErr) {
+        toast.error('LightX API credits are currently exhausted. Please recharge credits.', {
+          id: 'lightx-credit-page-toast',
+          duration: 4000,
+          style: {
+            background: '#18181c',
+            color: '#fbbf24',
+            border: '1px solid rgba(251, 191, 36, 0.3)',
+          },
+        });
+      } else {
+        setErrorMessage(msg);
+        toast.error(msg);
       }
-      toast.error(msg);
     } finally {
       setIsGenerating(false);
     }
@@ -287,18 +302,7 @@ const VirtualTryOnPage = () => {
         </div>
       </div>
 
-      {/* Credits Warning Banner if exhausted */}
-      {showCreditsWarning && (
-        <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-amber-300 flex items-start gap-3 animate-fadeIn">
-          <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-400" />
-          <div className="text-xs space-y-1">
-            <p className="font-bold text-sm text-white">LightX API credits are currently exhausted. Please recharge API credits.</p>
-            <p className="text-amber-200/80">
-              Your API key is configured correctly, but needs credits on <a href="https://app.lightxeditor.com" target="_blank" rel="noreferrer" className="underline font-semibold text-white hover:text-amber-300">LightX Editor Dashboard</a> to generate new synthesized images.
-            </p>
-          </div>
-        </div>
-      )}
+
 
       {/* Main Studio Interactive Container */}
       <div className="rounded-3xl bg-[#121216] border border-white/10 overflow-hidden flex flex-col lg:flex-row min-h-[600px] shadow-2xl">
