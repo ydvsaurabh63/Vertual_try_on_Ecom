@@ -9,7 +9,7 @@ Add these Environment Variables in your **Render Web Service Settings**:
 PORT=4000
 MONGODB_URI=mongodb+srv://ydvsaurabh63_db_user:2432dsEje0bQGriS@cluster0.kqehlbv.mongodb.net/ecom_tryon?retryWrites=true&w=majority&appName=Cluster0
 JWT_SECRET=aura_atelier_secret_jwt_key_2026_secure
-LIGHTX_API_KEY=9b4a360659d042b08016f6db7b4e8659_d0295cc1469d4d9f9a90c1d2f3a4bf0d_andoraitools
+LIGHTX_API_KEY=c74841c7555a4660849a808556f589a9_cbf52ace88664ffd91823305a0b358e7_andoraitools
 CLOUDINARY_CLOUD_NAME=dpa4crgv5
 CLOUDINARY_API_KEY=224249444435518
 CLOUDINARY_API_SECRET=FLe2tz1IrHNqTYx9KJ0sfOrtWGc
